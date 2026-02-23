@@ -1,0 +1,128 @@
+﻿@model RestoHub.Models.Siparisler
+@{
+    ViewBag.Title = "Yeni Sipariş";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    bool superAdmin = yetkiId == 1;
+    int seciliRId = ViewBag.SeciliRestoranId != null ? (int)ViewBag.SeciliRestoranId : 0;
+}
+
+<div class="row justify-content-center mt-3">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white fw-bold">
+                <i class="fas fa-plus-circle me-2"></i> Yeni Sipariş Oluştur
+            </div>
+            <div class="card-body">
+
+                @* -------- RESTORAN SEÇİMİ (SuperAdmin için ayrı form, POST ile karışmasın) -------- *@
+                @if (superAdmin)
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Restoran Seçin</label>
+                        <div class="input-group">
+                            <select id="ddlRestoranSec" class="form-select">
+                                <option value="0">-- Restoran Seçiniz --</option>
+                                @foreach (var item in (SelectList)ViewBag.RestoranId)
+                                {
+                                    if (item.Value == seciliRId.ToString())
+                                    {
+                                        <option value="@item.Value" selected="selected">@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                            <a id="btnRestoranSec" href="#" class="btn btn-outline-secondary">
+                                <i class="fas fa-sync-alt"></i> Uygula
+                            </a>
+                        </div>
+                        <small class="text-muted">Restoran seçtikten sonra "Uygula"ya tıklayın.</small>
+                    </div>
+                }
+
+                @* -------- SİPARİŞ FORMU -------- *@
+                @using (Html.BeginForm("Create", "Siparislers", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+
+                    @* RestoranId gizli alan olarak taşı *@
+                    <input type="hidden" name="RestoranId" value="@seciliRId" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">
+                                Masa <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownList("MasaId",
+                                     (SelectList)ViewBag.MasaId,
+                                     "-- Seçin --",
+                                     new { @class = "form-select" })
+                            @Html.ValidationMessage("MasaId", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">Servis Yapan</label>
+                            @Html.DropDownList("ServisYapanId",
+                                     (SelectList)ViewBag.ServisYapanId,
+                                     "-- Seçin --",
+                                     new { @class = "form-select" })
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Misafir Adı / Masa Notu</label>
+                        @Html.TextBoxFor(m => m.MisafirAdi,
+                                 new { @class = "form-control", placeholder = "Müşteri adı (isteğe bağlı)" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Kişi Sayısı</label>
+                        @Html.TextBoxFor(m => m.KisiSayisi,
+                                 new { @class = "form-control", type = "number", min = "1" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Özel Notlar</label>
+                        @Html.TextAreaFor(m => m.Notlar,
+                                 new { @class = "form-control", rows = "3", placeholder = "Sipariş notu..." })
+                    </div>
+
+                    if (seciliRId == 0 && superAdmin)
+                    {
+                        <div class="alert alert-warning py-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Sipariş oluşturmadan önce lütfen yukarıdan bir restoran seçip <strong>Uygula</strong>'ya tıklayın.
+                        </div>
+                    }
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success fw-bold"
+                                @(seciliRId == 0 && superAdmin ? "disabled" : "")>
+                            <i class="fas fa-check-circle me-2"></i> SİPARİŞİ OLUŞTUR VE ÜRÜN EKLE
+                        </button>
+                        <a href="@Url.Action("Index", "Siparislers")" class="btn btn-outline-secondary">
+                            Geri Dön
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Restoran "Uygula" butonuna tıklayınca GET ile sayfayı yenile
+        document.getElementById("btnRestoranSec") && document.getElementById("btnRestoranSec").addEventListener("click", function (e) {
+            e.preventDefault();
+            var val = document.getElementById("ddlRestoranSec").value;
+            if (val && val !== "0") {
+                window.location.href = "@Url.Action("Create", "Siparislers")?restoranId=" + val;
+            } else {
+                window.location.href = "@Url.Action("Create", "Siparislers")";
+            }
+        });
+    </script>
+}

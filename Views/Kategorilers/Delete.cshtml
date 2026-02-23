@@ -1,0 +1,70 @@
+﻿@model RestoHub.Models.Kategoriler
+
+@{
+    ViewBag.Title = "Delete";
+}
+@Styles.Render("~/Content/css")
+<h3>Bu kategoriyi silmek istediğinizden emin misiniz?</h3>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+
+        <dt>
+            RESTORAN ADI
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Restoranlar.RestoranAdi)
+        </dd>
+
+        <dt>
+            KATEGORİ ADI
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.KategoriAdi)
+        </dd>
+
+        <dt>
+            AÇIKLAMA
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Aciklama)
+        </dd>
+
+        <dt>
+            KATEGORİ DURUMU
+        </dt>
+
+        <dd>
+            @if (Model.Aktif)
+            {
+                <span class="badge bg-success">AKTİF</span>
+            }
+            else
+            {
+                <span class="badge bg-danger">PASİF</span>
+            }
+        </dd>
+
+        <dt>OLUŞTURULMA TARİHİ</dt>
+        <dd>
+            @(Model.OlusturmaTarihi == DateTime.MinValue ? "-" : Model.OlusturmaTarihi.ToShortDateString())
+        </dd>
+        <dt>GÜNCELLENME TARİHİ</dt>
+        <dd>
+            @(Model.GuncellemeTarihi.HasValue ? Model.GuncellemeTarihi.Value.ToShortDateString() : "-")
+        </dd>
+
+    </dl>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-actions no-color">
+            <input type="submit" value="SİL" class="btn btn-danger" /> | @Html.ActionLink("TÜM KATEGORİLER", "Index", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+</div>

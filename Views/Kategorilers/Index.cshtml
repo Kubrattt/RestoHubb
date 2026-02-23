@@ -1,0 +1,47 @@
+﻿@model IEnumerable<RestoHub.Models.Kategoriler>
+@{
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+}
+
+<p>
+    @Html.ActionLink("YENİ KATEGORİ OLUŞTUR", "Create", null, new { @class = "btn btn-success" })
+</p>
+
+<table class="table">
+    <tr>
+        <th>RESTORAN ADI</th>
+        <th>KATEGORİ ADI</th>
+        <th>AÇIKLAMA</th>
+        <th>KATEGORİ DURUMU</th>
+        <th></th>
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@Html.DisplayFor(modelItem => item.Restoranlar.RestoranAdi)</td>
+            <td>@Html.DisplayFor(modelItem => item.KategoriAdi)</td>
+            <td>@Html.DisplayFor(modelItem => item.Aciklama)</td>
+            <td>
+                @if (item.Aktif)
+                {
+                    <span class="badge bg-success">AKTİF</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">PASİF</span>
+                }
+            </td>
+            <td>
+                @if (yetkiId <= 3)
+                {
+                    @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.KategoriId }, new { @class = "btn btn-primary" })
+                }
+                @if (yetkiId == 1)
+                {
+                    <text> | </text>
+                    @Html.ActionLink("SİL", "Delete", new { id = item.KategoriId }, new { @class = "btn btn-danger" })
+                }
+            </td>
+        </tr>
+    }
+</table>

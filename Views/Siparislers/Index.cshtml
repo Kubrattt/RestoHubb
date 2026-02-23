@@ -1,0 +1,51 @@
+﻿@model IEnumerable<RestoHub.Models.Siparisler>
+@{
+    ViewBag.Title = "Siparişler";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    bool superAdminMi = (int)Session["YetkiId"] == 1;
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">Sipariş Listesi</h5>
+        <a href="@Url.Action("Create")" class="btn btn-primary btn-sm fw-bold">+ Yeni Sipariş</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small fw-bold">
+                <tr>
+                    <th class="ps-3">ID</th>
+                    @if (superAdminMi)
+                    {
+                        <th>Restoran</th>
+}
+                    <th>Masa</th>
+                    <th>Garson</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="ps-3 fw-bold">#@item.SiparisId</td>
+                        @if (superAdminMi)
+                        {
+                            <td><small>@item.Restoranlar.RestoranAdi</small></td>
+}
+                        <td><span class="badge bg-light text-dark border">@item.Masalar.MasaAdi</span></td>
+                        <td><small>@(item.Kullanicilar1 != null ? item.Kullanicilar1.KullaniciAdi : "Atanmadı")</small></td>
+                        <td class="fw-bold">@item.ToplamTutar.ToString("C2")</td>
+                        <td>
+                            <span class="badge @(item.OdemeDurumu == "Ödendi" ? "bg-success" : "bg-warning text-dark")">
+                                @item.SiparisDurumlari.DurumAdi
+                            </span>
+                        </td>
+                        
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

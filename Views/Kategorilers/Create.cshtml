@@ -1,0 +1,49 @@
+﻿@model RestoHub.Models.Kategoriler
+@{
+    ViewBag.Title = "Create";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        <h4>Kategori Kaydet</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        @if (yetkiId == 1)
+        {
+            <div class="form-group">
+                @Html.Label("RESTORAN ADI", new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.DropDownList("RestoranId", null, "Seçiniz", htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.RestoranId, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        }
+
+        <div class="form-group">
+            @Html.Label("KATEGORİ ADI", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.KategoriAdi, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.KategoriAdi, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.Label("AÇIKLAMA", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.TextAreaFor(model => model.Aciklama, 5, 20, new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.Aciklama, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="KAYDET" class="btn btn-success" /> |
+                @Html.ActionLink("TÜM KATEGORİLER", "Index", null, new { @class = "btn btn-primary" })
+            </div>
+        </div>
+    </div>
+}

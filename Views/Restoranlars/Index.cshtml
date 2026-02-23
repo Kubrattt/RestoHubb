@@ -1,0 +1,58 @@
+﻿@model IEnumerable<RestoHub.Models.Restoranlar>
+@Styles.Render("~/Content/css")
+<p>
+    @Html.ActionLink("YENİ RESTORAN OLUŞTUR", "Create", null, new { @class = "btn btn-success" })
+</p>
+<table class="table">
+    <tr>
+        <th>
+            RESTORAN ADI
+        </th>
+        <th>
+            TELEFON
+        </th>
+        <th>
+            E-MAİL
+        </th>
+        <th>
+            ADRES
+        </th>
+        <th>
+            RESTORAN DURUMU
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.RestoranAdi)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Telefon)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Email)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Adres)
+            </td>
+            <td>
+                @if (item.Aktif)
+                {
+                    <span class="badge bg-success">AKTİF</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">PASİF</span>
+                }
+            </td>
+            <td>
+                @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.RestoranId }, new { @class = "btn btn-primary" }) |
+                @Html.ActionLink("SİL", "Delete", new { id = item.RestoranId }, new { @class = "btn btn-danger" })
+            </td>
+        </tr>
+    }
+
+</table>

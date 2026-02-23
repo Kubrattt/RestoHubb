@@ -1,0 +1,95 @@
+﻿@model IEnumerable<RestoHub.Models.Masalar>
+@{
+    ViewBag.Title = "Masa Durumu Güncelle";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    string filtre = ViewBag.Filtre ?? "aktifBos";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    bool kasiyerMi = yetkiId == 6;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-chair me-2"></i>Masa Durumu</h4>
+</div>
+
+@if (TempData["msj"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i>@TempData["msj"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a href="@Url.Action("DurumGuncelle", "Masalars", new { filtre = "aktifBos" })"
+       class="btn @(filtre == "aktifBos" ? "btn-success" : "btn-outline-success")">
+        <i class="fas fa-chair me-1"></i> Boş Masalar
+    </a>
+    <a href="@Url.Action("DurumGuncelle", "Masalars", new { filtre = "aktifDolu" })"
+       class="btn @(filtre == "aktifDolu" ? "btn-danger" : "btn-outline-danger")">
+        <i class="fas fa-utensils me-1"></i> Dolu Masalar
+    </a>
+    <a href="@Url.Action("DurumGuncelle", "Masalars", new { filtre = "hepsi" })"
+       class="btn @(filtre == "hepsi" ? "btn-dark" : "btn-outline-dark")">
+        <i class="fas fa-th me-1"></i> Tüm Masalar
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">Bu filtreye uygun masa bulunamadı.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var masa in Model)
+        {
+            bool dolu = masa.Dolu == true;
+            string masaId = masa.MasaId.ToString();
+            string masaAdi = masa.MasaAdi;
+            string konum = masa.Konum;
+            string detayUrl = Url.Action("MasaDetay", "Masalars", new { id = masa.MasaId });
+
+            <div class="col-6 col-sm-4 col-md-3">
+                <div class="card border-2 @(dolu ? "border-danger" : "border-success") shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <i class="fas @(dolu ? "fa-utensils" : "fa-chair") fa-2x mb-2 @(dolu ? "text-danger" : "text-success")"></i>
+                        <h5 class="fw-bold mb-1">@masaAdi</h5>
+                        @if (!string.IsNullOrEmpty(konum))
+                        {
+                            <small class="text-muted d-block mb-2">
+                                <i class="fas fa-map-marker-alt me-1"></i>@konum
+                            </small>
+                        }
+                        <span class="badge @(dolu ? "bg-danger" : "bg-success") mb-2 px-3 py-2">
+                            @(dolu ? "DOLU" : "BOŞ")
+                        </span>
+                    </div>
+                    <div class="card-footer p-2 d-grid gap-1">
+
+                        @if (dolu)
+                        {
+                            <a href="@detayUrl" class="btn btn-warning btn-sm fw-bold">
+                                <i class="fas fa-receipt me-1"></i>
+                                @(kasiyerMi ? "Sipariş & Ödeme" : "Sipariş Detayı")
+                            </a>
+                        }
+
+                        @if (!kasiyerMi)
+                        {
+                            using (Html.BeginForm("DurumGuncellePost", "Masalars", FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@masaId" />
+                                <input type="hidden" name="filtre" value="@filtre" />
+                                <button type="submit" class="btn btn-sm @(dolu ? "btn-outline-success" : "btn-outline-danger") w-100">
+                                    @(dolu ? "Boş Yap" : "Dolu Yap")
+                                </button>
+                            }
+                        }
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

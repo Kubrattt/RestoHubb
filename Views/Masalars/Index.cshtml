@@ -1,0 +1,98 @@
+﻿@model IEnumerable<RestoHub.Models.Masalar>
+@{
+    ViewBag.Title = "Masalar";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    string filtre = ViewBag.Filtre ?? "aktifBos";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">Masalar</h4>
+    @if (yetkiId <= 3)
+    {
+        <a href="@Url.Action("Create", "Masalars")" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Yeni Masa Ekle
+        </a>
+    }
+</div>
+
+@if (TempData["msj"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i>@TempData["msj"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="mb-3 d-flex gap-2">
+    <a href="@Url.Action("Index", "Masalars", new { filtre = "aktifBos" })"
+       class="btn @(filtre == "aktifBos" ? "btn-success" : "btn-outline-success")">
+        <i class="fas fa-chair me-1"></i> Boş Masalar
+    </a>
+    <a href="@Url.Action("Index", "Masalars", new { filtre = "aktifDolu" })"
+       class="btn @(filtre == "aktifDolu" ? "btn-danger" : "btn-outline-danger")">
+        <i class="fas fa-utensils me-1"></i> Dolu Masalar
+    </a>
+    <a href="@Url.Action("Index", "Masalars", new { filtre = "hepsi" })"
+       class="btn @(filtre == "hepsi" ? "btn-dark" : "btn-outline-dark")">
+        <i class="fas fa-th me-1"></i> Tüm Masalar
+    </a>
+    <a href="@Url.Action("Index", "Masalars", new { filtre = "aktif" })"
+       class="btn @(filtre == "aktif" ? "btn-primary" : "btn-outline-primary")">
+        <i class="fas fa-check-circle me-1"></i> Aktif Masalar
+    </a>
+    <a href="@Url.Action("Index", "Masalars", new { filtre = "pasif" })"
+       class="btn @(filtre == "pasif" ? "btn-secondary" : "btn-outline-secondary")">
+        <i class="fas fa-ban me-1"></i> Pasif Masalar
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center text-muted py-5">
+        <i class="fas fa-chair fa-3x mb-3 d-block"></i>
+        <p>Bu filtreye ait masa bulunamadı.</p>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var masa in Model)
+        {
+            string cardBorder = !masa.Aktif ? "border-secondary" : (masa.Dolu == true ? "border-danger" : "border-success");
+            string badgeClass = !masa.Aktif ? "bg-secondary" : (masa.Dolu == true ? "bg-danger" : "bg-success");
+            string durumYazi = !masa.Aktif ? "Pasif" : (masa.Dolu == true ? "Dolu" : "Boş");
+            string icon = !masa.Aktif ? "fa-ban" : (masa.Dolu == true ? "fa-utensils" : "fa-chair");
+
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <div class="card h-100 border-2 @cardBorder shadow-sm">
+                    <div class="card-body text-center p-3">
+                        <i class="fas @icon fa-2x mb-2 text-@(masa.Dolu == true ? "danger" : "success")"></i>
+                        <h6 class="card-title fw-bold mb-1">@masa.MasaAdi</h6>
+                        <small class="text-muted d-block mb-1">#@masa.MasaKodu</small>
+                        @if (!string.IsNullOrEmpty(masa.Konum))
+                        {
+                            <small class="text-muted d-block mb-2">
+                                <i class="fas fa-map-marker-alt me-1"></i>@masa.Konum
+                            </small>
+                        }
+                        <span class="badge @badgeClass">@durumYazi</span>
+                    </div>
+                    @if (yetkiId <= 3)
+                    {
+                        <div class="card-footer p-2 d-flex gap-1 justify-content-center">
+                            <a href="@Url.Action("Edit", "Masalars", new { id = masa.MasaId })"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <a href="@Url.Action("Delete", "Masalars", new { id = masa.MasaId })"
+                               class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

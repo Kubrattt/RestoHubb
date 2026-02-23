@@ -1,0 +1,68 @@
+﻿@model IEnumerable<RestoHub.Models.Kullanicilar>
+@{
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    int aktifKullaniciId = Session["KullaniciId"] != null ? (int)Session["KullaniciId"] : 0;
+}
+
+@if (TempData["msj"] != null)
+{
+    <div class="alert alert-success">@TempData["msj"]</div>
+}
+
+<p>
+    @if (yetkiId == 1 || yetkiId == 2)
+    {
+        @Html.ActionLink("YENİ KULLANICI OLUŞTUR", "Create", null, new { @class = "btn btn-success" })
+    }
+</p>
+
+<table class="table">
+    <tr>
+        <th>RESTORAN ADI</th>
+        <th>YETKİ</th>
+        <th>KULLANICI ADI</th>
+        <th>AD SOYAD</th>
+        <th>E-MAİL</th>
+        <th>TELEFON</th>
+        <th>KULLANICI DURUMU</th>
+        <th>BAŞLAMA TARİHİ</th>
+        <th></th>
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@Html.DisplayFor(modelItem => item.Restoranlar.RestoranAdi)</td>
+            <td>@Html.DisplayFor(modelItem => item.Yetkiler.YetkiAdi)</td>
+            <td>@Html.DisplayFor(modelItem => item.KullaniciAdi)</td>
+            <td>@Html.DisplayFor(modelItem => item.Ad) @Html.DisplayFor(modelItem => item.Soyad)</td>
+            <td>@item.Email</td>
+            <td>@Html.DisplayFor(modelItem => item.Telefon)</td>
+            <td>
+                @if (item.Aktif)
+                {
+                    <span class="badge bg-success">AKTİF</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">PASİF</span>
+                }
+            </td>
+            <td>
+            <td>@item.BaslamaTarihi.ToShortDateString()</td>
+            </td>
+            <td>
+                @* Müdür(3) de düzenleyebilir *@
+                @if (yetkiId <= 3)
+                {
+                    @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.KullaniciId }, new { @class = "btn btn-primary" })
+                }
+                @* Silme sadece SuperAdmin(1) ve RestoranSahibi(2) *@
+                @if (yetkiId == 1 || yetkiId == 2)
+                {
+                    <text> | </text>
+                    @Html.ActionLink("SİL", "Delete", new { id = item.KullaniciId }, new { @class = "btn btn-danger" })
+                }
+            </td>
+        </tr>
+    }
+</table>

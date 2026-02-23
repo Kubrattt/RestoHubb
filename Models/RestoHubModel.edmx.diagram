@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="76d70097e38b4b8895e7ab40b67fe53d" Name="Diagram1">
+        <EntityTypeShape EntityType="RestoHubDBModel.BirimTipleri" Width="1.5" PointX="3" PointY="9.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Kategoriler" Width="1.5" PointX="3" PointY="5.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Kullanicilar" Width="1.5" PointX="8" PointY="6.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Masalar" Width="1.5" PointX="3" PointY="14.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Restoranlar" Width="1.5" PointX="0.75" PointY="7.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.SiparisDetaylari" Width="1.5" PointX="10.25" PointY="6.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.SiparisDurumlari" Width="1.5" PointX="8" PointY="3.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Siparisler" Width="1.5" PointX="10.25" PointY="11.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Urunler" Width="1.5" PointX="5.25" PointY="5.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="RestoHubDBModel.Yetkiler" Width="1.5" PointX="5.75" PointY="12.125" IsExpanded="true" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Urunler_Birim" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Kategoriler_Restoran" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Urunler_Kategori" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Kullanicilar_Restoran" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Kullanicilar_Yetki" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_SiparisDetaylari_Hazirlayan" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Siparisler_Olusturan" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Siparisler_ServisYapan" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Masalar_Restoran" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Siparisler_Masa" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Siparisler_Restoran" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Urunler_Restoran" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_SiparisDetaylari_Durum" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_SiparisDetaylari_Siparis" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_SiparisDetaylari_Urun" ManuallyRouted="false" />
+        <AssociationConnector Association="RestoHubDBModel.FK_Siparisler_Durum" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="RestoHubDBModel.sysdiagrams" Width="1.5" PointX="0.75" PointY="0.75" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

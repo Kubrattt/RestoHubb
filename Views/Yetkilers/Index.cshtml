@@ -1,0 +1,31 @@
+﻿@model IEnumerable<RestoHub.Models.Yetkiler>
+@{
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+}
+
+<p>
+    @Html.ActionLink("YENİ YETKİ OLUŞTUR", "Create", null, new { @class = "btn btn-success" })
+</p>
+
+<table class="table">
+    <tr>
+        <th>YETKİ ADI</th>
+        <th>OLUŞTURULMA TARİHİ</th>
+        <th></th>
+    </tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@Html.DisplayFor(modelItem => item.YetkiAdi)</td>
+            <td>@item.OlusturmaTarihi.ToShortDateString()</td>
+            <td>
+                @if (yetkiId == 1)
+                {
+                    @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.YetkiId }, new { @class = "btn btn-primary" })
+                    <text> | </text>
+                    @Html.ActionLink("SİL", "Delete", new { id = item.YetkiId }, new { @class = "btn btn-danger" })
+                }
+            </td>
+        </tr>
+    }
+</table>

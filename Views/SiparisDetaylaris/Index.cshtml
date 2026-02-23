@@ -1,0 +1,179 @@
+﻿@model IEnumerable<RestoHub.Models.SiparisDetaylari>
+@{
+    ViewBag.Title = "Mutfak / Hazırlık";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    string filtre = ViewBag.Filtre ?? "bekliyor";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+
+    int hazirlaniyorId = (int)ViewBag.HazirlaniyorId;
+    int hazirId = (int)ViewBag.HazirId;
+    int teslimId = (int)ViewBag.TeslimId;
+
+    var gruplar = Model
+        .GroupBy(d => d.SiparisId)
+        .OrderBy(g => g.Min(d => d.OlusturmaTarihi))
+        .ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fas fa-fire me-2 text-danger"></i>Mutfak / Hazırlık</h4>
+    <small class="text-muted">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</small>
+</div>
+
+@if (TempData["msj"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i>@TempData["msj"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a href="@Url.Action("Index", "SiparisDetaylaris", new { filtre = "bekliyor" })"
+       class="btn @(filtre == "bekliyor" ? "btn-warning" : "btn-outline-warning")">
+        <i class="fas fa-hourglass-half me-1"></i> Bekliyor
+    </a>
+    <a href="@Url.Action("Index", "SiparisDetaylaris", new { filtre = "hazirlaniyor" })"
+       class="btn @(filtre == "hazirlaniyor" ? "btn-primary" : "btn-outline-primary")">
+        <i class="fas fa-fire me-1"></i> Hazırlanıyor
+    </a>
+    <a href="@Url.Action("Index", "SiparisDetaylaris", new { filtre = "hazir" })"
+       class="btn @(filtre == "hazir" ? "btn-success" : "btn-outline-success")">
+        <i class="fas fa-check me-1"></i> Hazır
+    </a>
+    <a href="@Url.Action("Index", "SiparisDetaylaris", new { filtre = "teslim" })"
+       class="btn @(filtre == "teslim" ? "btn-info" : "btn-outline-info")">
+        <i class="fas fa-hand-holding me-1"></i> Teslim Edildi
+    </a>
+    <a href="@Url.Action("Index", "SiparisDetaylaris", new { filtre = "hepsi" })"
+       class="btn @(filtre == "hepsi" ? "btn-dark" : "btn-outline-dark")">
+        <i class="fas fa-th me-1"></i> Tümü
+    </a>
+</div>
+
+@if (!gruplar.Any())
+{
+    <div class="text-center text-muted py-5">
+        <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+        <p class="fw-bold">Bu filtrede sipariş yok!</p>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var grup in gruplar)
+        {
+            var ilkDetay = grup.First();
+            var masaAdi = ilkDetay.Siparisler?.Masalar?.MasaAdi ?? "-";
+            var durumAdi = ilkDetay.SiparisDurumlari?.DurumAdi ?? "";
+            var siparisId = grup.Key;
+            var siparisSaati = ilkDetay.OlusturmaTarihi.ToString("HH:mm");
+
+            string cardBorder = "secondary";
+            string headerBg = "secondary";
+            bool headerKoyu = false;
+
+            if (durumAdi == "Bekliyor") { cardBorder = "warning"; headerBg = "warning"; headerKoyu = true; }
+            else if (durumAdi == "Onaylandı") { cardBorder = "info"; headerBg = "info"; headerKoyu = true; }
+            else if (durumAdi == "Hazırlanıyor") { cardBorder = "primary"; headerBg = "primary"; headerKoyu = false; }
+            else if (durumAdi == "Hazır") { cardBorder = "success"; headerBg = "success"; headerKoyu = false; }
+            else if (durumAdi == "Teslim Edildi") { cardBorder = "info"; headerBg = "info"; headerKoyu = true; }
+            else if (durumAdi == "Tamamlandı") { cardBorder = "dark"; headerBg = "dark"; headerKoyu = false; }
+            else if (durumAdi == "İptal Edildi") { cardBorder = "danger"; headerBg = "danger"; headerKoyu = false; }
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card shadow-sm border-@cardBorder border-2 h-100">
+
+                    <div class="card-header bg-@headerBg @(headerKoyu ? "text-dark" : "text-white") d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">
+                            <i class="fas fa-chair me-1"></i> Masa: @masaAdi
+                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <small>@siparisSaati</small>
+                            <span class="badge bg-white text-dark">@durumAdi</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-2">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                @foreach (var detay in grup)
+                                {
+                                    string urunAdi = detay.Urunler != null ? detay.Urunler.UrunAdi : "-";
+                                    string miktar = detay.Miktar.ToString("0");
+                                    string ekSaat = detay.OlusturmaTarihi.ToString("HH:mm");
+
+                                    <tr>
+                                        <td class="fw-bold align-middle">@urunAdi</td>
+                                        <td class="text-center align-middle" style="width:55px">
+                                            <span class="badge bg-secondary">x @miktar</span>
+                                        </td>
+                                        <td class="text-end text-muted small align-middle" style="width:40px">
+                                            @ekSaat
+                                        </td>
+                                    </tr>
+                                    if (!string.IsNullOrEmpty(detay.Notlar))
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="pt-0">
+                                                <div class="alert alert-warning py-1 px-2 mb-0 small">
+                                                    <i class="fas fa-sticky-note me-1"></i>@detay.Notlar
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer d-flex gap-2 justify-content-end flex-wrap">
+
+                        @if (durumAdi == "Bekliyor" && (yetkiId == 1 || yetkiId == 2 || yetkiId == 3 || yetkiId == 5))
+                        {
+                            using (Html.BeginForm("DurumGuncelleTumu", "SiparisDetaylaris", FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="siparisId" value="@siparisId" />
+                                <input type="hidden" name="yeniDurumId" value="@hazirlaniyorId" />
+                                <input type="hidden" name="filtre" value="@filtre" />
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-fire me-1"></i> Hazırlanıyor
+                                </button>
+                            }
+                        }
+
+                        @if (durumAdi == "Hazırlanıyor" && (yetkiId == 1 || yetkiId == 2 || yetkiId == 3 || yetkiId == 5))
+                        {
+                            using (Html.BeginForm("DurumGuncelleTumu", "SiparisDetaylaris", FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="siparisId" value="@siparisId" />
+                                <input type="hidden" name="yeniDurumId" value="@hazirId" />
+                                <input type="hidden" name="filtre" value="@filtre" />
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check me-1"></i> Hazır
+                                </button>
+                            }
+                        }
+
+                        @if (durumAdi == "Hazır" && (yetkiId == 1 || yetkiId == 2 || yetkiId == 3 || yetkiId == 4))
+                        {
+                            using (Html.BeginForm("DurumGuncelleTumu", "SiparisDetaylaris", FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="siparisId" value="@siparisId" />
+                                <input type="hidden" name="yeniDurumId" value="@teslimId" />
+                                <input type="hidden" name="filtre" value="@filtre" />
+                                <button type="submit" class="btn btn-sm btn-info">
+                                    <i class="fas fa-hand-holding me-1"></i> Teslim Et
+                                </button>
+                            }
+                        }
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

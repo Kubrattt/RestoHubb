@@ -1,0 +1,53 @@
+﻿@model RestoHub.Models.SiparisDurumlari
+
+@{
+    ViewBag.Title = "Delete";
+}
+@Styles.Render("~/Content/css")
+<h3>Bu sipariş durumunu silmek istediğinizden emin misiniz?</h3>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+        <dt>
+            DURUM ADI
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DurumAdi)
+        </dd>
+
+        <dt>
+            RENK HTML KODU
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Renk)
+        </dd>
+
+        <dt>
+            GÖRÜNÜM SIRA SAYISI
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.GorunumSirasi)
+        </dd>
+
+        <dt>
+            OLUŞTURULMA TARİHİ
+        </dt>
+
+        <dd>
+            @Convert.ToDateTime(Model.OlusturmaTarihi).ToShortDateString()
+        </dd>
+
+    </dl>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-actions no-color">
+            <input type="submit" value="SİL" class="btn btn-danger" /> | @Html.ActionLink("TÜM SİPARİŞ DURUMLARI", "Index", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+</div>

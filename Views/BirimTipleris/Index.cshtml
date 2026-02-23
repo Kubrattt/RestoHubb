@@ -1,0 +1,37 @@
+﻿@model IEnumerable<RestoHub.Models.BirimTipleri>
+
+@{
+    ViewBag.Title = "Index";
+}
+@Styles.Render("~/Content/css")
+<p>
+    @Html.ActionLink("YENİ BİRİM TİPİ OLUŞTUR", "Create", null, new { @class = "btn btn-success" })
+</p>
+<table class="table">
+    <tr>
+        <th>
+            BİRİM ADI
+        </th>
+        <th>
+            BİRİM SEMBOLÜ
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.BirimAdi)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.BirimSembol)
+            </td>
+            <td>
+                @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.BirimId }, new { @class = "btn btn-primary" }) |
+                @Html.ActionLink("SİL", "Delete", new { id = item.BirimId }, new { @class = "btn btn-danger" })
+            </td>
+        </tr>
+    }
+
+</table>

@@ -1,0 +1,192 @@
+﻿@model RestoHub.Models.Siparisler
+@{
+    ViewBag.Title = "Masa Detayı";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    bool kasiyerMi = yetkiId == 6;
+    var masa = ViewBag.Masa as RestoHub.Models.Masalar;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">
+        <i class="fas fa-receipt me-2 text-warning"></i>
+        Masa: @(masa != null ? masa.MasaAdi : "-")
+    </h4>
+    <a href="@Url.Action("DurumGuncelle", "Masalars", new { filtre = "aktifDolu" })"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Geri
+    </a>
+</div>
+
+@if (Model == null)
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Bu masaya ait açık sipariş bulunamadı.
+    </div>
+}
+else
+{
+    <div class="row g-3">
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">
+                        <i class="fas fa-list me-2"></i>Sipariş İçeriği
+                    </span>
+                    <small>@Model.SiparisTarihi.ToString("dd.MM.yyyy HH:mm")</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Ürün</th>
+                                <th class="text-center">Adet</th>
+                                <th class="text-end">B.Fiyat</th>
+                                <th class="text-end">Toplam</th>
+                                <th class="text-center">Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detay in Model.SiparisDetaylari)
+                            {
+                                string durumAdi = detay.SiparisDurumlari != null ? detay.SiparisDurumlari.DurumAdi : "-";
+                                string durumBadge = "secondary";
+                                if (durumAdi == "Bekliyor") { durumBadge = "warning"; }
+                                else if (durumAdi == "Hazırlanıyor") { durumBadge = "primary"; }
+                                else if (durumAdi == "Hazır") { durumBadge = "success"; }
+                                else if (durumAdi == "Teslim Edildi") { durumBadge = "info"; }
+
+                                string urunAdi = detay.Urunler != null ? detay.Urunler.UrunAdi : "-";
+                                string miktarStr = detay.Miktar.ToString("0");
+                                string bFiyatStr = detay.BirimFiyat.ToString("N2");
+                                string toplamStr = detay.ToplamFiyat.ToString("N2");
+
+                                <tr>
+                                    <td class="fw-bold">@urunAdi</td>
+                                    <td class="text-center">@miktarStr</td>
+                                    <td class="text-end">@bFiyatStr ₺</td>
+                                    <td class="text-end text-primary fw-bold">@toplamStr ₺</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-@durumBadge">@durumAdi</span>
+                                    </td>
+                                </tr>
+                                if (!string.IsNullOrEmpty(detay.Notlar))
+                                {
+                                    <tr>
+                                        <td colspan="5" class="py-1">
+                                            <small class="text-warning">
+                                                <i class="fas fa-sticky-note me-1"></i>@detay.Notlar
+                                            </small>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">Ara Toplam:</td>
+                                <td class="text-end fw-bold">@Model.AraToplam.ToString("N2") ₺</td>
+                                <td></td>
+                            </tr>
+                            @if (Model.IndirimTutari > 0)
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-end text-danger">İndirim:</td>
+                                    <td class="text-end text-danger">-@Model.IndirimTutari.Value.ToString("N2") ₺</td>
+                                    <td></td>
+                                </tr>
+                            }
+                            @if (Model.KDVTutari > 0)
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-end">KDV:</td>
+                                    <td class="text-end">@Model.KDVTutari.Value.ToString("N2") ₺</td>
+                                    <td></td>
+                                </tr>
+                            }
+                            <tr class="table-warning">
+                                <td colspan="3" class="text-end fw-bold fs-5">TOPLAM:</td>
+                                <td class="text-end fw-bold fs-5 text-danger">@Model.ToplamTutar.ToString("N2") ₺</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white fw-bold">
+                    <i class="fas fa-cash-register me-2"></i>Ödeme Al
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("OdemeYap", "Masalars", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="siparisId" value="@Model.SiparisId" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">ÖDEME YÖNTEMİ</label>
+                            <select name="odemeYontemi" class="form-select">
+                                <option value="Nakit">Nakit</option>
+                                <option value="Kredi Kartı">Kredi Kartı</option>
+                                <option value="Banka Kartı">Banka Kartı</option>
+                                <option value="Yemek Kartı">Yemek Kartı</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">ÖDENECEK TUTAR</label>
+                            <div class="input-group">
+                                <input type="number" name="odenenTutar" class="form-control fw-bold fs-5"
+                                       step="0.01" min="0"
+                                       value="@Model.ToplamTutar.ToString("0.00").Replace(",", ".")" />
+                                <span class="input-group-text fw-bold">₺</span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning py-2 small mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Ödeme alındıktan sonra masa otomatik boşalır ve sipariş kapatılır.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold">
+                                <i class="fas fa-check-circle me-2"></i>ÖDEMEYİ ONAYLA
+                            </button>
+                            @if (!kasiyerMi)
+                            {
+                                <a href="@Url.Action("Create", "SiparisDetaylaris", new { sipId = Model.SiparisId })"
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i> Ürün Ekle / Düzenle
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-body small text-muted">
+                    @if (!string.IsNullOrEmpty(Model.MisafirAdi))
+                    {
+                        <div><i class="fas fa-user me-2"></i><strong>Müşteri:</strong> @Model.MisafirAdi</div>
+                    }
+                    @if (Model.KisiSayisi > 0)
+                    {
+                        <div><i class="fas fa-users me-2"></i><strong>Kişi Sayısı:</strong> @Model.KisiSayisi</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Notlar))
+                    {
+                        <div><i class="fas fa-sticky-note me-2"></i><strong>Not:</strong> @Model.Notlar</div>
+                    }
+                    <div><i class="fas fa-clock me-2"></i><strong>Açılış:</strong> @Model.SiparisTarihi.ToString("HH:mm")</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+}

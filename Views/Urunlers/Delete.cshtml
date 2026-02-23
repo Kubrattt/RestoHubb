@@ -1,0 +1,82 @@
+﻿@model RestoHub.Models.Urunler
+@{
+    ViewBag.Title = "Delete";
+}
+
+<h3>Bu ürünü silmek istediğinizden emin misiniz?</h3>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+        <dt>RESTORAN ADI</dt>
+        <dd>@Html.DisplayFor(model => model.Restoranlar.RestoranAdi)</dd>
+
+        <dt>KATEGORİ ADI</dt>
+        <dd>@Html.DisplayFor(model => model.Kategoriler.KategoriAdi)</dd>
+
+        <dt>BİRİM ADI</dt>
+        <dd>@Html.DisplayFor(model => model.BirimTipleri.BirimAdi)</dd>
+
+        <dt>ÜRÜN KODU</dt>
+        <dd>@Html.DisplayFor(model => model.UrunKodu)</dd>
+
+        <dt>ÜRÜN ADI</dt>
+        <dd>@Html.DisplayFor(model => model.UrunAdi)</dd>
+
+        <dt>AÇIKLAMA</dt>
+        <dd>@Html.DisplayFor(model => model.Aciklama)</dd>
+
+        <dt>KISA AÇIKLAMA</dt>
+        <dd>@Html.DisplayFor(model => model.KisaAciklama)</dd>
+
+        <dt>FİYAT</dt>
+        <dd>@Html.DisplayFor(model => model.Fiyat)</dd>
+
+        <dt>MALİYET FİYATI</dt>
+        <dd>@Html.DisplayFor(model => model.MaliyetFiyati)</dd>
+
+        <dt>İNDİRİMLİ FİYAT</dt>
+        <dd>@Html.DisplayFor(model => model.IndirimliFiyat)</dd>
+
+        <dt>HAZIRLANMA SÜRESİ</dt>
+        <dd>@Model.HazirlamaSuresiText</dd>
+
+        <dt>STOK DURUMU</dt>
+        <dd>
+            @if (Model.StokDurumu)
+            {
+                <span class="badge bg-success">STOKTA</span>
+            }
+            else
+            {
+                <span class="badge bg-danger">STOKTA DEĞİL</span>
+            }
+        </dd>
+
+        <dt>ÜRÜN DURUMU</dt>
+        <dd>
+            @if (Model.Aktif)
+            {
+                <span class="badge bg-success">AKTİF</span>
+            }
+            else
+            {
+                <span class="badge bg-danger">PASİF</span>
+            }
+        </dd>
+
+        <dt>OLUŞTURULMA TARİHİ</dt>
+        <dd>@(Model.OlusturmaTarihi == DateTime.MinValue ? "-" : Model.OlusturmaTarihi.ToShortDateString())</dd>
+
+        <dt>GÜNCELLENME TARİHİ</dt>
+        <dd>@(Model.GuncellemeTarihi.HasValue ? Model.GuncellemeTarihi.Value.ToShortDateString() : "-")</dd>
+    </dl>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        <div class="form-actions no-color">
+            <input type="submit" value="SİL" class="btn btn-danger" /> |
+            @Html.ActionLink("TÜM ÜRÜNLER", "Index", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+</div>

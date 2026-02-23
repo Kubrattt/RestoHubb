@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestoHub - @ViewBag.Title</title>
+    @Styles.Render("~/Content/restohublayout")
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    @{
+        int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    }
+</head>
+<body class="bg-light">
+
+    <div class="sidebar">
+        <div class="p-3 text-center border-bottom border-secondary mb-3">
+            <a href="@Url.Action("Index", "Home")" class="text-white text-decoration-none">
+                <h3 class="m-0">
+                    RestoHub
+                    <small class="d-block" style="font-size:10px;">
+                        @(Session["RestoranAdi"] != null ? Session["RestoranAdi"].ToString() : "Admin")
+                    </small>
+                </h3>
+            </a>
+        </div>
+
+        @* ANA SAYFA - Aşçı (5) ve Kasiyer (6) görmesin (Genelde Dashboard yetkisi kısıtlanır) *@
+        @if (yetkiId != 5 && yetkiId != 6)
+        {
+            <a href="@Url.Action("Index", "Home")" class="active"><i class="fas fa-chart-line me-2"></i> Ana Sayfa</a>
+        }
+
+        @* SİSTEM YÖNETİMİ *@
+        @if (yetkiId == 1)
+        {
+            <a data-bs-toggle="collapse" href="#sistem"><i class="fas fa-cogs me-2"></i> Sistem Yönetimi</a>
+            <div class="collapse submenu" id="sistem">
+                <a href="@Url.Action("Index", "Restoranlars")">Restoranlar</a>
+                <a href="@Url.Action("Index", "Yetkilers")">Yetkiler</a>
+                <a href="@Url.Action("Index", "Kullanicilars")">Kullanıcılar</a>
+            </div>
+        }
+
+        @* RESTORAN YÖNETİMİ *@
+        @if (yetkiId <= 6)
+        {
+            <a data-bs-toggle="collapse" href="#restoran"><i class="fas fa-store me-2"></i> Restoran Yönetimi</a>
+            <div class="collapse show submenu" id="restoran">
+
+                @* Restoran Hesabı: Sadece Admin ve Patron *@
+                @if (yetkiId == 1 || yetkiId == 2)
+                {
+                    <a href="@Url.Action("Restoranim", "Restoranlars")">Restoran Hesabım</a>
+                }
+
+                @* Herkes Profilini Görebilir *@
+                <a href="@Url.Action("Profilim", "Kullanicilars")">Profilim</a>
+
+                @* Masa Durumu: Aşçı (5) hariç herkes görür *@
+                @if (yetkiId != 5)
+                {
+                    <a href="@Url.Action("DurumGuncelle", "Masalars")">Masa Durumu</a>
+                }
+
+                @* Masalar ve Birimler: Sadece Yetki 1, 2, 3 *@
+                @if (yetkiId <= 3)
+                {
+                    <a href="@Url.Action("Index", "Masalars")">Masalar</a>
+                    <a href="@Url.Action("Index", "BirimTipleris")">Birim Tipleri</a>
+                }
+            </div>
+        }
+
+        @* MENÜ VE STOK - Aşçı (5) ve Üstü görebilir *@
+        @if (yetkiId <= 3 || yetkiId == 5)
+        {
+            <a data-bs-toggle="collapse" href="#menu"><i class="fas fa-utensils me-2"></i> Menü Yönetimi</a>
+            <div class="collapse submenu" id="menu">
+                @if (yetkiId <= 3)
+                {
+                    <a href="@Url.Action("Index", "Kategorilers")">Kategoriler</a>
+                }
+                <a href="@Url.Action("Index", "Urunlers")">Ürünler</a>
+            </div>
+        }
+
+        @* OPERASYON - Aşçı (5) görmez, Kasiyer (6) görür *@
+        @if (yetkiId != 5)
+        {
+            <a data-bs-toggle="collapse" href="#siparis"><i class="fas fa-receipt me-2"></i> Sipariş Akışı</a>
+            <div class="collapse show submenu" id="siparis">
+                <a href="@Url.Action("Create", "Siparislers")"><i class="fas fa-plus me-1"></i> Sipariş Oluştur</a>
+                <a href="@Url.Action("Index", "Siparislers")">Tüm Siparişler</a>
+
+                @* Mutfak/Hazırlık: Garson (4) ve Kasiyer (6) görmez *@
+                @if (yetkiId != 4 && yetkiId != 6)
+                {
+                    <a href="@Url.Action("Index", "SiparisDetaylaris")">Mutfak/Hazırlık</a>
+                }
+            </div>
+        }
+        else
+        {
+            @* Sadece Aşçı (5) için özel mutfak butonu *@
+            <a href="@Url.Action("Index", "SiparisDetaylaris")"><i class="fas fa-fire me-2"></i> Mutfak/Hazırlık</a>
+        }
+
+        @* RAPORLAR *@
+        @if (yetkiId <= 3)
+        {
+            <a href="/Rapor/Index"><i class="fas fa-file-invoice-dollar me-2"></i> Raporlar</a>
+        }
+
+        <div class="mt-auto p-3 border-top border-secondary">
+            <a href="@Url.Action("Logout", "Account")" class="text-danger"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="topbar d-flex justify-content-end align-items-center px-4 py-2 bg-white shadow-sm mb-4">
+            <div class="user-info text-end">
+                <span class="d-block font-weight-bold text-dark">@Session["AdSoyad"]</span>
+                <small class="text-muted">@Session["Yetki"]</small>
+            </div>
+            <i class="fas fa-user-circle fa-2x ms-3 text-secondary"></i>
+        </div>
+
+        @RenderBody()
+    </div>
+
+    @Scripts.Render("~/bundles/bootstrapjs")
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

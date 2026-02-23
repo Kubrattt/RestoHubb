@@ -1,0 +1,61 @@
+﻿@model RestoHub.Models.Restoranlar
+@{
+    ViewBag.Title = "Restoranım";
+}
+
+<div class="container mt-4">
+    <h2>Restoran Bilgilerim</h2>
+    <hr />
+
+    @if (TempData["msj"] != null)
+    {
+        <div class="alert alert-success">@TempData["msj"]</div>
+    }
+
+    @using (Html.BeginForm("Restoranim", "Restoranlars", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.RestoranId)
+        @Html.HiddenFor(model => model.OlusturmaTarihi)
+        @Html.HiddenFor(model => model.Aktif)
+
+        <div class="form-horizontal">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group mb-3">
+                <label class="control-label col-md-2"><b>RESTORAN ADI</b></label>
+                <div class="col-md-10">
+                    @Html.EditorFor(model => model.RestoranAdi, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.RestoranAdi, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label col-md-2"><b>TELEFON</b></label>
+                <div class="col-md-10">
+                    @Html.EditorFor(model => model.Telefon, new { htmlAttributes = new { @class = "form-control" } })
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label col-md-2"><b>E-MAİL</b></label>
+                <div class="col-md-10">
+                    @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label col-md-2"><b>ADRES</b></label>
+                <div class="col-md-10">
+                    @Html.TextAreaFor(model => model.Adres, new { @class = "form-control", rows = 3 })
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <input type="submit" value="GÜNCELLE" class="btn btn-primary btn-lg" />
+                </div>
+            </div>
+        </div>
+    }
+</div>

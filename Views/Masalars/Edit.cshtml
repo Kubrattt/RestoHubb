@@ -1,0 +1,85 @@
+﻿@model RestoHub.Models.Masalar
+@{
+    ViewBag.Title = "Edit";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="form-horizontal">
+        <h4>Masa Güncelle</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.MasaId)
+        @Html.HiddenFor(model => model.OlusturmaTarihi)
+
+        @if (yetkiId == 1)
+        {
+            <div class="form-group">
+                @Html.Label("RESTORAN ADI", new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.DropDownList("RestoranId", null, "Seçiniz", htmlAttributes: new { @class = "form-control" })
+                    @Html.ValidationMessageFor(model => model.RestoranId, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        }
+        else
+        {
+            @Html.HiddenFor(model => model.RestoranId)
+        }
+
+        <div class="form-group">
+            @Html.Label("MASA KODU", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.MasaKodu, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.MasaKodu, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.Label("MASA ADI", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.MasaAdi, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.MasaAdi, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.Label("KONUM", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Konum, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Konum, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.Label("MASA DURUMU", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                <div class="checkbox">
+                    BOŞ: @Html.RadioButtonFor(model => model.Dolu, false)
+                    DOLU: @Html.RadioButtonFor(model => model.Dolu, true)
+                    @Html.ValidationMessageFor(model => model.Dolu, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.Label("KULLANIM DURUMU", new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                <div class="checkbox">
+                    AKTİF: @Html.RadioButtonFor(model => model.Aktif, true)
+                    PASİF: @Html.RadioButtonFor(model => model.Aktif, false)
+                    @Html.ValidationMessageFor(model => model.Aktif, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="GÜNCELLE" class="btn btn-primary" /> |
+                @Html.ActionLink("TÜM MASALAR", "Index", null, new { @class = "btn btn-primary" })
+            </div>
+        </div>
+    </div>
+}

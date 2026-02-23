@@ -1,0 +1,49 @@
+﻿@model IEnumerable<RestoHub.Models.SiparisDurumlari>
+
+@{
+    ViewBag.Title = "Index";
+}
+@Styles.Render("~/Content/css")
+<p>
+    @Html.ActionLink("YENİ SİPARİŞ DURUMU OLUŞTUR", "Create", null, new { @class = "btn btn-success" })
+</p>
+<table class="table">
+    <tr>
+        <th>
+            DURUM ADI
+        </th>
+        <th>
+            RENK HTML KODU
+        </th>
+        <th>
+            GÖRÜNÜM SIRA SAYISI
+        </th>
+        <th>
+            OLUŞTURULMA TARİHİ
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.DurumAdi)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Renk)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.GorunumSirasi)
+            </td>
+            <td>
+                @Convert.ToDateTime(item.OlusturmaTarihi).ToShortDateString()
+            </td>
+            <td>
+                @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.DurumId }, new { @class = "btn btn-primary" }) |
+                @Html.ActionLink("SİL", "Delete", new { id = item.DurumId }, new { @class = "btn btn-danger" })
+            </td>
+        </tr>
+    }
+
+</table>

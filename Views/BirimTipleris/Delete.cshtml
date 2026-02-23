@@ -1,0 +1,45 @@
+﻿@model RestoHub.Models.BirimTipleri
+
+@{
+    ViewBag.Title = "Delete";
+}
+@Styles.Render("~/Content/css")
+<h3>Bu birim tipini silmek istediğinizden emin misiniz?</h3>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+        <dt>
+            BİRİM ADI
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.BirimAdi)
+        </dd>
+
+        <dt>
+            BİRİM SEMBOLÜ
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.BirimSembol)
+        </dd>
+
+        <dt>
+            OLUŞTURULMA TARİHİ
+        </dt>
+
+        <dd>
+            @Convert.ToDateTime(Model.OlusturmaTarihi).ToShortDateString()
+        </dd>
+
+    </dl>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-actions no-color">
+            <input type="submit" value="SİL" class="btn btn-danger" /> | @Html.ActionLink("TÜM BİRİM TİPLERİ", "Index", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+</div>

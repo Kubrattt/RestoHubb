@@ -1,0 +1,25 @@
+﻿@model RestoHub.Models.Yetkiler
+@{
+    ViewBag.Title = "Delete";
+}
+
+<h3>Bu yetkiyi silmek istediğinizden emin misiniz?</h3>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+        <dt>YETKİ ADI</dt>
+        <dd>@Html.DisplayFor(model => model.YetkiAdi)</dd>
+
+        <dt>OLUŞTURULMA TARİHİ</dt>
+        <dd>@Model.OlusturmaTarihi.ToShortDateString()</dd>
+    </dl>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        <div class="form-actions no-color">
+            <input type="submit" value="SİL" class="btn btn-danger" /> |
+            @Html.ActionLink("TÜM YETKİLER", "Index", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+</div>

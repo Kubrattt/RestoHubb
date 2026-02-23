@@ -1,0 +1,35 @@
+﻿@model RestoHub.Models.HomeDashboardViewModel
+
+@if (Model.AktifYetkiId == 1)
+{
+    <h3>Hoş geldiniz, @Model.AktifKullaniciAdi</h3>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">Toplam Restoran</div>
+                <div class="panel-body"><h2>@Model.ToplamRestoran</h2></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-success">
+                <div class="panel-heading">Toplam Kullanıcı</div>
+                <div class="panel-body"><h2>@Model.ToplamKullanici</h2></div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+<div class="text-center">
+    <h2>@Model.AktifRestoranAdi</h2>
+    <p>Hoş geldiniz, <strong>@Model.AktifKullaniciAdi</strong></p>
+
+    @if (Model.AktifYetkiId <= 3)
+    {
+        <div class="panel panel-info" style="max-width:300px; margin:auto;">
+            <div class="panel-heading">Aktif Çalışan</div>
+            <div class="panel-body"><h2>@Model.RestoranKullanici</h2></div>
+        </div>
+    }
+</div>
+}

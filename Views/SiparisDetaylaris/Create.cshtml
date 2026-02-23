@@ -1,0 +1,134 @@
+﻿@model RestoHub.Models.SiparisDetaylari
+@{
+    ViewBag.Title = "Ürün Ekle";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    var mevcutlar = ViewBag.MevcutDetaylar as List<RestoHub.Models.SiparisDetaylari>;
+    var siparis = ViewBag.Siparis as RestoHub.Models.Siparisler;
+}
+
+<div class="row mt-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white fw-bold">YENİ ÜRÜN EKLE</div>
+            <div class="card-body">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("SiparisId", (int)ViewBag.SiparisId)
+                    @Html.Hidden("DurumId", (int)ViewBag.BekliyorId)
+
+                    <div class="mb-3">
+                        <label class="small fw-bold">ÜRÜN</label>
+                        <select name="UrunId" id="ddlUrun" class="form-select">
+                            <option value="">-- Seç --</option>
+                            @if (ViewBag.UrunId != null)
+                            {
+                                foreach (var item in (SelectList)ViewBag.UrunId)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="small fw-bold">MİKTAR</label>
+                            @Html.TextBoxFor(m => m.Miktar,
+                                     new { @class = "form-control", type = "number", min = "1", @value = "1", id = "txtMiktar" })
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="small fw-bold">FİYAT</label>
+                            <input type="text" id="txtBirimFiyat" class="form-control bg-light" readonly
+                                   placeholder="Ürün seçin" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold">NOT</label>
+                        @Html.TextAreaFor(m => m.Notlar, new { @class = "form-control", rows = "2" })
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 fw-bold">EKLE</button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">
+                    SİPARİŞ ÖZETİ
+                    (@(siparis?.MisafirAdi ?? (siparis?.Masalar?.MasaAdi ?? "Masa")))
+                </span>
+                <span class="badge bg-warning text-dark">
+                    TOPLAM: @(siparis?.ToplamTutar.ToString("N2")) ₺
+                </span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Mkt</th>
+                            <th>B.Fiyat</th>
+                            <th>Toplam</th>
+                            <th>#</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (mevcutlar != null && mevcutlar.Any())
+                        {
+                            foreach (var item in mevcutlar)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@(item.Urunler?.UrunAdi ?? "-")</td>
+                                    <td>@item.Miktar</td>
+                                    <td>@item.BirimFiyat.ToString("N2")</td>
+                                    <td class="text-primary fw-bold">@item.ToplamFiyat.ToString("N2")</td>
+                                    <td>
+                                        @using (Html.BeginForm("Delete", "SiparisDetaylaris",
+                                            new { id = item.SiparisDetayId, geriSiparisId = item.SiparisId },
+                                            FormMethod.Post))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm text-danger border-0"
+                                                    onclick="return confirm('Silinsin mi?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">Henüz ürün eklenmedi.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="@Url.Action("Index", "Siparislers")" class="btn btn-sm btn-outline-dark px-4">
+                    SİPARİŞLERİ KAPAT
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Fiyat listesini C#'tan al
+        var fiyatlar = @Html.Raw(ViewBag.UrunFiyatlariJson ?? "{}");
+
+        document.getElementById("ddlUrun").addEventListener("change", function () {
+            var id = this.value;
+            var fiyat = id && fiyatlar[id] ? fiyatlar[id] : null;
+            document.getElementById("txtBirimFiyat").value = fiyat ? fiyat.toFixed(2) + " ₺" : "";
+        });
+    </script>
+}

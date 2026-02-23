@@ -1,0 +1,164 @@
+﻿@model RestoHub.Models.Urunler
+@{
+    ViewBag.Title = "Ürün Kaydet";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    bool superAdmin = yetkiId == 1;
+    int seciliRId = ViewBag.SeciliRestoranId != null ? (int)ViewBag.SeciliRestoranId : 0;
+}
+
+<div class="row justify-content-center mt-3">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="fas fa-plus-circle me-2"></i> Ürün Kaydet
+            </div>
+            <div class="card-body">
+
+                @if (TempData["msj"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        @TempData["msj"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @* SuperAdmin için restoran seçimi - ayrı, POST ile karışmasın *@
+                @if (superAdmin)
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Restoran Seçin</label>
+                        <div class="input-group">
+                            <select id="ddlRestoranSec" class="form-select">
+                                <option value="0">-- Restoran Seçiniz --</option>
+                                @foreach (var item in (SelectList)ViewBag.RestoranId)
+                                {
+                                    if (item.Value == seciliRId.ToString())
+                                    {
+                                        <option value="@item.Value" selected="selected">@item.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                            <a id="btnRestoranSec" href="#" class="btn btn-outline-secondary">
+                                <i class="fas fa-sync-alt"></i> Uygula
+                            </a>
+                        </div>
+                        <small class="text-muted">Restoran seçtikten sonra "Uygula"ya tıklayın, kategoriler güncellenecektir.</small>
+                    </div>
+                    <hr />
+                }
+
+                @using (Html.BeginForm("Create", "Urunlers", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="RestoranId" value="@seciliRId" />
+
+                    if (seciliRId == 0 && superAdmin)
+                    {
+                        <div class="alert alert-warning py-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Ürün eklemeden önce lütfen yukarıdan restoran seçip <strong>Uygula</strong>'ya tıklayın.
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">KATEGORİ <span class="text-danger">*</span></label>
+                        @Html.DropDownList("KategoriId", (SelectList)ViewBag.KategoriId, "Seçiniz",
+                                 new { @class = "form-select" })
+                        @Html.ValidationMessageFor(m => m.KategoriId, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">BİRİM</label>
+                        @Html.DropDownList("BirimId", (SelectList)ViewBag.BirimId, "Seçiniz",
+                                 new { @class = "form-select" })
+                        @Html.ValidationMessageFor(m => m.BirimId, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">ÜRÜN KODU</label>
+                        @Html.TextBoxFor(m => m.UrunKodu, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.UrunKodu, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">ÜRÜN ADI <span class="text-danger">*</span></label>
+                        @Html.TextBoxFor(m => m.UrunAdi, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.UrunAdi, "", new { @class = "text-danger small" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">AÇIKLAMA</label>
+                        @Html.TextAreaFor(m => m.Aciklama, new { @class = "form-control", rows = "3" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">KISA AÇIKLAMA</label>
+                        @Html.TextAreaFor(m => m.KisaAciklama, new { @class = "form-control", rows = "2" })
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">FİYAT <span class="text-danger">*</span></label>
+                            @Html.TextBoxFor(m => m.Fiyat, new { @class = "form-control", type = "number", step = "0.01" })
+                            @Html.ValidationMessageFor(m => m.Fiyat, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">MALİYET FİYATI</label>
+                            @Html.TextBoxFor(m => m.MaliyetFiyati, new { @class = "form-control", type = "number", step = "0.01" })
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold small">İNDİRİMLİ FİYAT</label>
+                            @Html.TextBoxFor(m => m.IndirimliFiyat, new { @class = "form-control", type = "number", step = "0.01" })
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">HAZIRLANMA SÜRESİ (dakika)</label>
+                        @Html.TextBoxFor(m => m.HazirlamaSuresi, new { @class = "form-control", type = "number" })
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small d-block">STOK DURUMU</label>
+                        <div class="form-check form-check-inline">
+                            @Html.RadioButtonFor(m => m.StokDurumu, true, new { @class = "form-check-input", id = "stokVar" })
+                            <label class="form-check-label" for="stokVar">Stokta Var</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            @Html.RadioButtonFor(m => m.StokDurumu, false, new { @class = "form-check-input", id = "stokYok" })
+                            <label class="form-check-label" for="stokYok">Stokta Yok</label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success fw-bold"
+                                @(seciliRId == 0 && superAdmin ? "disabled" : "")>
+                            <i class="fas fa-save me-1"></i> KAYDET
+                        </button>
+                        <a href="@Url.Action("Index", "Urunlers")" class="btn btn-outline-secondary">
+                            Tüm Ürünler
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("btnRestoranSec") && document.getElementById("btnRestoranSec").addEventListener("click", function (e) {
+            e.preventDefault();
+            var val = document.getElementById("ddlRestoranSec").value;
+            if (val && val !== "0") {
+                window.location.href = "@Url.Action("Create", "Urunlers")?restoranId=" + val;
+            } else {
+                window.location.href = "@Url.Action("Create", "Urunlers")";
+            }
+        });
+    </script>
+}

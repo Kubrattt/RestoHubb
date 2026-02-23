@@ -1,0 +1,124 @@
+﻿@model IEnumerable<RestoHub.Models.Urunler>
+@{
+    ViewBag.Title = "Ürünler Paneli";
+    Layout = "~/Views/Shared/_RestorantLayout.cshtml";
+    string filtre = ViewBag.Filtre ?? "hepsi";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    bool duzenleyebilir = yetkiId == 1 || yetkiId == 2 || yetkiId == 3;
+    bool superAdminMi = yetkiId == 1;
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h4 class="fw-bold mb-0 text-uppercase"><i class="fas fa-utensils me-2"></i>Ürün Yönetimi</h4>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex gap-2 justify-content-end align-items-center flex-wrap">
+
+                    @* --- SÜPER ADMİN ÖZEL FİLTRE --- *@
+                    @if (superAdminMi && ViewBag.Restoranlar != null)
+                    {
+                        using (Html.BeginForm("Index", "Urunlers", FormMethod.Get, new { id = "restoranForm", @class = "d-flex align-items-center" }))
+                        {
+                            @Html.Hidden("filtre", filtre)
+                            <span class="me-2 fw-bold text-muted small text-nowrap">RESTORAN SEÇ:</span>
+                            @Html.DropDownList("restoranId", (SelectList)ViewBag.Restoranlar, "Tüm Restoranlar",
+                                new { @class = "form-select form-select-sm border-primary", style = "min-width:200px;", onchange = "document.getElementById('restoranForm').submit();" })
+                        }
+                    }
+
+                    @if (duzenleyebilir)
+                    {
+                        <a href="@Url.Action("Create", "Urunlers")" class="btn btn-success btn-sm px-3">
+                            <i class="fas fa-plus me-1"></i>YENİ ÜRÜN
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["msj"] != null)
+{
+    <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i><strong>BİLGİ:</strong> @TempData["msj"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@* --- DURUM BUTONLARI --- *@
+<div class="mb-4 d-flex gap-2 flex-wrap">
+    <a href="@Url.Action("Index", "Urunlers", new { filtre = "hepsi", restoranId = ViewBag.SeciliRestoranId })"
+       class="btn btn-sm @(filtre == "hepsi" ? "btn-dark" : "btn-outline-dark")">TÜMÜ</a>
+
+    <a href="@Url.Action("Index", "Urunlers", new { filtre = "aktif", restoranId = ViewBag.SeciliRestoranId })"
+       class="btn btn-sm @(filtre == "aktif" ? "btn-primary" : "btn-outline-primary")">AKTİF</a>
+
+    <a href="@Url.Action("Index", "Urunlers", new { filtre = "pasif", restoranId = ViewBag.SeciliRestoranId })"
+       class="btn btn-sm @(filtre == "pasif" ? "btn-secondary" : "btn-outline-secondary")">PASİF</a>
+
+    <a href="@Url.Action("Index", "Urunlers", new { filtre = "stokta", restoranId = ViewBag.SeciliRestoranId })"
+       class="btn btn-sm @(filtre == "stokta" ? "btn-success" : "btn-outline-success")">STOKTA</a>
+
+    <a href="@Url.Action("Index", "Urunlers", new { filtre = "stokYok", restoranId = ViewBag.SeciliRestoranId })"
+       class="btn btn-sm @(filtre == "stokYok" ? "btn-danger" : "btn-outline-danger")">STOK YOK</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+            <h5 class="text-muted">Aradığınız kriterlere uygun ürün bulunamadı.</h5>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var urun in Model)
+        {
+            string borderRenk = !urun.Aktif ? "border-secondary" : (urun.StokDurumu ? "border-success" : "border-danger");
+            string opasiteClass = !urun.Aktif ? "opacity-75" : "";
+
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <div class="card h-100 border-2 @borderRenk shadow-sm @opasiteClass position-relative">
+                    @if (superAdminMi)
+                    {
+                        <div class="position-absolute top-0 end-0 p-1">
+                            <span class="badge bg-dark small" style="font-size: 8px;">ID:@urun.RestoranId</span>
+                        </div>
+                    }
+                    <div class="card-body text-center p-3">
+                        <div class="mb-2 text-primary">
+                            <i class="fas fa-utensils fa-2x"></i>
+                        </div>
+                        <h6 class="card-title fw-bold mb-1 text-truncate" title="@urun.UrunAdi" style="font-size:13px;">@urun.UrunAdi</h6>
+                        <small class="text-muted d-block mb-1">#@urun.UrunKodu</small>
+
+                        <div class="fw-bold text-dark mb-2">@urun.Fiyat.ToString("N2") ₺</div>
+
+                        <div class="d-grid gap-1">
+                            <span class="badge @(urun.Aktif ? "bg-success" : "bg-secondary")" style="font-size: 10px;">
+                                @(urun.Aktif ? "AKTİF" : "PASİF")
+                            </span>
+                            <span class="badge @(urun.StokDurumu ? "bg-info text-dark" : "bg-danger")" style="font-size: 10px;">
+                                @(urun.StokDurumu ? "STOKTA" : "YOK")
+                            </span>
+                        </div>
+                    </div>
+                    @if (duzenleyebilir)
+                    {
+                        <div class="card-footer bg-transparent border-0 p-2 d-flex gap-1 justify-content-center">
+                            <a href="@Url.Action("Edit", "Urunlers", new { id = urun.UrunId })" class="btn btn-xs btn-primary"><i class="fas fa-edit"></i></a>
+                            <a href="@Url.Action("Delete", "Urunlers", new { id = urun.UrunId })" class="btn btn-xs btn-danger"><i class="fas fa-trash-alt"></i></a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,63 @@
+﻿@model RestoHub.Models.Masalar
+@{
+    ViewBag.Title = "Delete";
+}
+
+<h3>Bu masayı silmek istediğinizden emin misiniz?</h3>
+<hr />
+<div>
+    <dl class="dl-horizontal">
+        <dt>RESTORAN ADI</dt>
+        <dd>@Html.DisplayFor(model => model.Restoranlar.RestoranAdi)</dd>
+
+        <dt>MASA KODU</dt>
+        <dd>@Html.DisplayFor(model => model.MasaKodu)</dd>
+
+        <dt>MASA ADI</dt>
+        <dd>@Html.DisplayFor(model => model.MasaAdi)</dd>
+
+        <dt>KONUM</dt>
+        <dd>@Html.DisplayFor(model => model.Konum)</dd>
+
+        <dt>MASA DURUMU</dt>
+        <dd>
+            @if (Model.Dolu)
+            {
+                <span class="badge bg-danger">DOLU</span>
+            }
+            else
+            {
+                <span class="badge bg-success">BOŞ</span>
+            }
+        </dd>
+
+        <dt>KULLANIM DURUMU</dt>
+        <dd>
+            @if (Model.Aktif)
+            {
+                <span class="badge bg-success">AKTİF</span>
+            }
+            else
+            {
+                <span class="badge bg-danger">PASİF</span>
+            }
+        </dd>
+
+        <dt>OLUŞTURULMA TARİHİ</dt>
+        <dd>
+            @(Model.OlusturmaTarihi == DateTime.MinValue ? "-" : Model.OlusturmaTarihi.ToShortDateString())
+        </dd>
+
+        <dt>GÜNCELLENİM TARİHİ</dt>
+        <dd>@(Model.GuncellemeTarihi.HasValue ? Model.GuncellemeTarihi.Value.ToShortDateString() : "-")</dd>
+    </dl>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        <div class="form-actions no-color">
+            <input type="submit" value="SİL" class="btn btn-danger" /> |
+            @Html.ActionLink("TÜM MASALAR", "Index", null, new { @class = "btn btn-primary" })
+        </div>
+    }
+</div>
