@@ -84,7 +84,7 @@
                             {
                                 <tr>
                                     <td class="fw-bold">@(item.Urunler?.UrunAdi ?? "-")</td>
-                                    <td>@item.Miktar</td>
+                                    <td>@item.Miktar.ToString("0")</td>
                                     <td>@item.BirimFiyat.ToString("N2")</td>
                                     <td class="text-primary fw-bold">@item.ToplamFiyat.ToString("N2")</td>
                                     <td>
@@ -112,8 +112,8 @@
                 </table>
             </div>
             <div class="card-footer bg-white text-center">
-                <a href="@Url.Action("Index", "Siparislers")" class="btn btn-sm btn-outline-dark px-4">
-                    SİPARİŞLERİ KAPAT
+                <a href="@Url.Action("DurumGuncelle", "Masalars", new { filtre = "aktifDolu" })" class="btn btn-success btn-lg w-100 fw-bold shadow-sm">
+                    <i class="fas fa-check-circle me-2"></i>SİPARİŞİ KAYDET VE MASALARA DÖN
                 </a>
             </div>
         </div>
@@ -122,7 +122,6 @@
 
 @section Scripts {
     <script>
-        // Fiyat listesini C#'tan al
         var fiyatlar = @Html.Raw(ViewBag.UrunFiyatlariJson ?? "{}");
 
         document.getElementById("ddlUrun").addEventListener("change", function () {

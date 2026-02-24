@@ -4,7 +4,10 @@
     Layout = "~/Views/Shared/_RestorantLayout.cshtml";
     string filtre = ViewBag.Filtre ?? "aktifBos";
     int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
-    bool kasiyerMi = yetkiId == 6;
+
+    // Yetki Grupları
+    bool odemeYetkisi = new int[] { 1, 2, 3, 6 }.Contains(yetkiId);
+    bool personelYetkisi = new int[] { 4, 5 }.Contains(yetkiId);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -44,49 +47,43 @@ else
         @foreach (var masa in Model)
         {
             bool dolu = masa.Dolu == true;
-            string masaId = masa.MasaId.ToString();
-            string masaAdi = masa.MasaAdi;
-            string konum = masa.Konum;
             string detayUrl = Url.Action("MasaDetay", "Masalars", new { id = masa.MasaId });
 
             <div class="col-6 col-sm-4 col-md-3">
                 <div class="card border-2 @(dolu ? "border-danger" : "border-success") shadow-sm h-100">
                     <div class="card-body text-center p-3">
                         <i class="fas @(dolu ? "fa-utensils" : "fa-chair") fa-2x mb-2 @(dolu ? "text-danger" : "text-success")"></i>
-                        <h5 class="fw-bold mb-1">@masaAdi</h5>
-                        @if (!string.IsNullOrEmpty(konum))
+                        <h5 class="fw-bold mb-1">@masa.MasaAdi</h5>
+                        @if (!string.IsNullOrEmpty(masa.Konum))
                         {
-                            <small class="text-muted d-block mb-2">
-                                <i class="fas fa-map-marker-alt me-1"></i>@konum
-                            </small>
+                            <small class="text-muted d-block mb-2"><i class="fas fa-map-marker-alt me-1"></i>@masa.Konum</small>
                         }
                         <span class="badge @(dolu ? "bg-danger" : "bg-success") mb-2 px-3 py-2">
                             @(dolu ? "DOLU" : "BOŞ")
                         </span>
                     </div>
-                    <div class="card-footer p-2 d-grid gap-1">
 
-                        @if (dolu)
+                    <div class="card-footer p-2 d-grid gap-1">
+                        @if (dolu && (odemeYetkisi || personelYetkisi))
                         {
                             <a href="@detayUrl" class="btn btn-warning btn-sm fw-bold">
                                 <i class="fas fa-receipt me-1"></i>
-                                @(kasiyerMi ? "Sipariş & Ödeme" : "Sipariş Detayı")
+                                @(odemeYetkisi ? "Sipariş & Ödeme" : "Sipariş Detayı")
                             </a>
                         }
 
-                        @if (!kasiyerMi)
+                        @if (odemeYetkisi)
                         {
                             using (Html.BeginForm("DurumGuncellePost", "Masalars", FormMethod.Post))
                             {
                                 @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@masaId" />
+                                <input type="hidden" name="id" value="@masa.MasaId" />
                                 <input type="hidden" name="filtre" value="@filtre" />
                                 <button type="submit" class="btn btn-sm @(dolu ? "btn-outline-success" : "btn-outline-danger") w-100">
                                     @(dolu ? "Boş Yap" : "Dolu Yap")
                                 </button>
                             }
                         }
-
                     </div>
                 </div>
             </div>

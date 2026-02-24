@@ -49,11 +49,11 @@ namespace RestoHub.Controllers
         {
             int rId = SuperAdminMi ? (restoranId ?? 0) : AktifRestoranId;
 
-            ViewBag.BekliyorId       = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
+            ViewBag.BekliyorId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
             ViewBag.SeciliRestoranId = rId;
 
             DoldurDropDown(rId);
-            return View(new Siparisler { RestoranId = rId });
+            return View(new Siparisler { RestoranId = rId, KisiSayisi = 1 });
         }
 
         // POST: Siparislers/Create
@@ -67,12 +67,12 @@ namespace RestoHub.Controllers
                 siparisler.RestoranId = AktifRestoranId;
 
             // Otomatik alanlar
-            siparisler.OlusturanId   = AktifKullaniciId;
+            siparisler.OlusturanId = AktifKullaniciId;
             siparisler.SiparisTarihi = DateTime.Now;
-            siparisler.OdemeDurumu   = "Ödenmedi";
-            siparisler.AraToplam     = 0;
-            siparisler.ToplamTutar   = 0;
-            siparisler.KDVTutari     = 0;
+            siparisler.OdemeDurumu = "Ödenmedi";
+            siparisler.AraToplam = 0;
+            siparisler.ToplamTutar = 0;
+            siparisler.KDVTutari = 0;
             siparisler.IndirimTutari = 0;
             if (siparisler.KisiSayisi <= 0) siparisler.KisiSayisi = 1;
 
@@ -93,45 +93,48 @@ namespace RestoHub.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewBag.BekliyorId       = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
+                ViewBag.BekliyorId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
                 ViewBag.SeciliRestoranId = siparisler.RestoranId;
                 DoldurDropDown(siparisler.RestoranId);
                 return View(siparisler);
             }
 
-            // -------------------------------------------------------
-            // SEPET MANTIĞI: Aynı masada zaten açık (Ödenmedi) sipariş var mı?
-            // Varsa yeni sipariş açma, doğrudan o siparişin detay sayfasına git.
-            // -------------------------------------------------------
+            // --- KRİTİK GÜNCELLEME: MASA KİLİTLEME ---
+            var masa = await db.Masalar.FindAsync(siparisler.MasaId);
+            if (masa != null)
+            {
+                masa.Dolu = true; // MASAYI DOLU YAP
+                masa.GuncellemeTarihi = DateTime.Now;
+                db.Entry(masa).State = EntityState.Modified; // SQL'E BİLDİR
+            }
+
+            // SEPET MANTIĞI: Aynı masada zaten açık sipariş var mı?
             var mevcutSiparis = await db.Siparisler
-                .Where(s => s.MasaId     == siparisler.MasaId
+                .Where(s => s.MasaId == siparisler.MasaId
                          && s.RestoranId == siparisler.RestoranId
                          && s.OdemeDurumu == "Ödenmedi")
-                .OrderByDescending(s => s.SiparisTarihi)
                 .FirstOrDefaultAsync();
 
             if (mevcutSiparis != null)
             {
-                // Mevcut açık siparişe yönlendir
-                TempData["msj"] = "Bu masada zaten açık bir sipariş var. Mevcut siparişe ürün eklendi.";
-                return RedirectToAction("Create", "SiparisDetaylaris",
-                    new { sipId = mevcutSiparis.SiparisId });
+                await db.SaveChangesAsync(); // Sadece masa durumunu kaydet
+                TempData["msj"] = "Bu masada zaten açık bir sipariş var. Mevcut sepet açıldı.";
+                return RedirectToAction("Create", "SiparisDetaylaris", new { sipId = mevcutSiparis.SiparisId });
             }
 
             // Açık sipariş yoksa yeni oluştur
             try
             {
                 db.Siparisler.Add(siparisler);
-                await db.SaveChangesAsync();
-                return RedirectToAction("Create", "SiparisDetaylaris",
-                    new { sipId = siparisler.SiparisId });
+                await db.SaveChangesAsync(); // Hem masayı hem yeni siparişi kaydet
+                return RedirectToAction("Create", "SiparisDetaylaris", new { sipId = siparisler.SiparisId });
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Kayıt hatası: " + ex.Message);
             }
 
-            ViewBag.BekliyorId       = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
+            ViewBag.BekliyorId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
             ViewBag.SeciliRestoranId = siparisler.RestoranId;
             DoldurDropDown(siparisler.RestoranId);
             return View(siparisler);
@@ -167,7 +170,7 @@ namespace RestoHub.Controllers
                     .ToList()
                 : new List<Kullanicilar>();
 
-            ViewBag.MasaId        = new SelectList(masalar, "MasaId", "MasaAdi", null);
+            ViewBag.MasaId = new SelectList(masalar, "MasaId", "MasaAdi", null);
             ViewBag.ServisYapanId = new SelectList(personeller, "KullaniciId", "KullaniciAdi", null);
         }
     }

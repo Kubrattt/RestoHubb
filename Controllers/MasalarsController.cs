@@ -11,21 +11,18 @@ namespace RestoHub.Controllers
 {
     public class MasalarsController : BaseController
     {
+        // GET: Masalar Listesi (Yönetim Paneli)
+        // DÜZELTME: Index sayfası Siparisler modeli beklediği için 
+        // buradaki yönlendirmeyi veya modeli eşitlememiz lazım.
         public async Task<ActionResult> Index(string filtre = "aktifBos")
         {
             if (AltYetkiMi) return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-            var masalar = db.Masalar.AsQueryable();
-            if (!SuperAdminMi) masalar = masalar.Where(x => x.RestoranId == AktifRestoranId);
 
-            if (filtre == "aktifBos") masalar = masalar.Where(x => x.Aktif == true && x.Dolu == false);
-            else if (filtre == "aktifDolu") masalar = masalar.Where(x => x.Aktif == true && x.Dolu == true);
-            else if (filtre == "aktif") masalar = masalar.Where(x => x.Aktif == true);
-            else if (filtre == "pasif") masalar = masalar.Where(x => x.Aktif == false);
-
-            ViewBag.Filtre = filtre;
-            return View(await masalar.ToListAsync());
+            // Eğer Index view'ın Siparisler bekliyorsa, seni DurumGuncelle'ye atalım ki patlama.
+            return RedirectToAction("DurumGuncelle", new { filtre });
         }
 
+        // GET: Masa Durumu Güncelleme Ekranı (Restoran Sahası)
         public async Task<ActionResult> DurumGuncelle(string filtre = "aktifBos")
         {
             var masalar = db.Masalar.AsQueryable();
@@ -39,6 +36,7 @@ namespace RestoHub.Controllers
             return View(await masalar.ToListAsync());
         }
 
+        // POST: Hızlı Dolu/Boş Değiştirme
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DurumGuncellePost(int id, string filtre)
@@ -52,67 +50,73 @@ namespace RestoHub.Controllers
             return RedirectToAction("DurumGuncelle", new { filtre });
         }
 
-        // GET: Masanın açık siparişini göster (Kasiyer ve üstü)
+        // GET: Masa Detay ve Sipariş Görüntüleme
         public async Task<ActionResult> MasaDetay(int id)
         {
             var masa = await db.Masalar.FindAsync(id);
             if (masa == null) return HttpNotFound();
+
             if (!SuperAdminMi && masa.RestoranId != AktifRestoranId)
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
-            // Masanın açık (Ödenmedi) siparişini bul
+            // Masanın "Ödenmedi" durumundaki siparişini getir
             var siparis = await db.Siparisler
                 .Include(s => s.SiparisDetaylari.Select(d => d.Urunler))
+                .Include(s => s.SiparisDetaylari.Select(d => d.SiparisDurumlari))
                 .Include(s => s.SiparisDurumlari)
                 .Where(s => s.MasaId == id && s.OdemeDurumu == "Ödenmedi")
                 .OrderByDescending(s => s.SiparisTarihi)
                 .FirstOrDefaultAsync();
 
+            // KRİTİK DÜZELTME: Masa dolu ama sipariş yoksa patlama, yeni siparişe yönlendir
+            if (masa.Dolu && siparis == null)
+            {
+                TempData["hata"] = "Masa dolu işaretlenmiş ancak aktif bir sipariş bulunamadı. Lütfen yeni bir sipariş açın.";
+                return RedirectToAction("Create", "Siparislers", new { masaId = id, restoranId = masa.RestoranId });
+            }
+
             ViewBag.Masa = masa;
-            return View(siparis); // siparis null olabilir (masa dolu ama sipariş kaydı yoksa)
+            return View(siparis);
         }
 
-        // POST: Ödeme al
+        // POST: Ödeme Al ve Masayı Boşalt
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> OdemeYap(int siparisId, string odemeYontemi, decimal odenenTutar)
+        public async Task<ActionResult> OdemeYap(int siparisId, string odemeYontemi, string odenenTutarStr)
         {
-            var siparis = await db.Siparisler
-                .Include(s => s.Masalar)
-                .FirstOrDefaultAsync(s => s.SiparisId == siparisId);
+            int[] yetkililer = { 1, 2, 3, 6 };
+            if (!yetkililer.Contains(AktifYetkiId))
+            {
+                TempData["hata"] = "Tahsilat yapma yetkiniz yok!";
+                return RedirectToAction("MasaDetay", new { id = db.Siparisler.Find(siparisId)?.MasaId });
+            }
 
+            decimal odenenTutar = 0;
+            if (string.IsNullOrEmpty(odenenTutarStr) || !decimal.TryParse(odenenTutarStr.Replace(".", ","), out odenenTutar))
+            {
+                TempData["hata"] = "Lütfen geçerli bir ödeme tutarı giriniz.";
+                return RedirectToAction("MasaDetay", new { id = db.Siparisler.Find(siparisId)?.MasaId });
+            }
+
+            var siparis = await db.Siparisler.Include(s => s.Masalar).Include(s => s.SiparisDetaylari).FirstOrDefaultAsync(s => s.SiparisId == siparisId);
             if (siparis == null) return HttpNotFound();
-            if (!SuperAdminMi && siparis.RestoranId != AktifRestoranId)
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
-            siparis.OdemeDurumu  = "Ödendi";
-            siparis.OdemeYontemi = odemeYontemi;
-            siparis.ToplamTutar  = odenenTutar;
-            siparis.SiparisTarihi  = DateTime.Now;
-
-            // Masayı boşalt
             if (siparis.Masalar != null)
             {
                 siparis.Masalar.Dolu = false;
-                siparis.Masalar.GuncellemeTarihi = DateTime.Now;
+                db.Entry(siparis.Masalar).State = EntityState.Modified;
             }
 
-            // Siparişin tüm detaylarını "Tamamlandı" durumuna çek
-            var tamamlandiId = db.SiparisDurumlari
-                .Where(d => d.DurumAdi == "Tamamlandı")
-                .Select(d => d.DurumId)
-                .FirstOrDefault();
-
-            if (tamamlandiId > 0)
-            {
-                var detaylar = db.SiparisDetaylari.Where(d => d.SiparisId == siparisId).ToList();
-                foreach (var d in detaylar)
-                    d.DurumId = tamamlandiId;
-            }
+            siparis.OdemeDurumu = "Ödendi";
+            siparis.OdemeYontemi = odemeYontemi;
+            siparis.ToplamTutar = odenenTutar;
+            siparis.TamamlanmaTarihi = DateTime.Now;
 
             await db.SaveChangesAsync();
-            TempData["msj"] = "ÖDEME ALINDI";
-            return RedirectToAction("DurumGuncelle", new { filtre = "aktifDolu" });
+            TempData["msj"] = "Tahsilat alındı, masa boşaltıldı.";
+
+            // DÜZELTME: Seni Index'e değil DurumGuncelle'ye atıyoruz ki Model hatası vermesin.
+            return RedirectToAction("DurumGuncelle", new { filtre = "aktifBos" });
         }
 
         public ActionResult Create()
@@ -130,7 +134,7 @@ namespace RestoHub.Controllers
             if (!SuperAdminMi) masalar.RestoranId = AktifRestoranId;
 
             if (await db.Masalar.AnyAsync(x => x.MasaAdi == masalar.MasaAdi && x.RestoranId == masalar.RestoranId))
-                ModelState.AddModelError("MasaAdi", "Bu masa adı bu restoranda kayıtlı.");
+                ModelState.AddModelError("MasaAdi", "Bu masa adı zaten mevcut.");
 
             if (ModelState.IsValid)
             {
@@ -139,7 +143,7 @@ namespace RestoHub.Controllers
                 db.Masalar.Add(masalar);
                 await db.SaveChangesAsync();
                 TempData["msj"] = "KAYIT BAŞARILI";
-                return RedirectToAction("Index");
+                return RedirectToAction("DurumGuncelle");
             }
             DoldurDropDown(masalar);
             return View(masalar);
@@ -150,7 +154,6 @@ namespace RestoHub.Controllers
             if (AltYetkiMi || id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             Masalar masalar = await db.Masalar.FindAsync(id);
             if (masalar == null || (!SuperAdminMi && masalar.RestoranId != AktifRestoranId)) return HttpNotFound();
-
             DoldurDropDown(masalar);
             return View(masalar);
         }
@@ -168,7 +171,7 @@ namespace RestoHub.Controllers
                 db.Entry(masalar).State = EntityState.Modified;
                 await db.SaveChangesAsync();
                 TempData["msj"] = "GÜNCELLEME BAŞARILI";
-                return RedirectToAction("Index");
+                return RedirectToAction("DurumGuncelle");
             }
             DoldurDropDown(masalar);
             return View(masalar);
@@ -194,7 +197,7 @@ namespace RestoHub.Controllers
                 await db.SaveChangesAsync();
                 TempData["msj"] = "MASA PASİF YAPILDI";
             }
-            return RedirectToAction("Index");
+            return RedirectToAction("DurumGuncelle");
         }
 
         private void DoldurDropDown(Masalar masalar = null)
