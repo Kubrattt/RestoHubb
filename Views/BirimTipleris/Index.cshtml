@@ -1,7 +1,8 @@
 ﻿@model IEnumerable<RestoHub.Models.BirimTipleri>
 
 @{
-    ViewBag.Title = "Index";
+    int yetkiId = Session["YetkiId"] != null ? (int)Session["YetkiId"] : 0;
+    int aktifKullaniciId = Session["KullaniciId"] != null ? (int)Session["KullaniciId"] : 0;
 }
 @Styles.Render("~/Content/css")
 <p>
@@ -15,8 +16,11 @@
         <th>
             BİRİM SEMBOLÜ
         </th>
-        <th></th>
-    </tr>
+        @if (yetkiId == 1)
+        {
+            <th></th>
+        }
+        </tr>
 
     @foreach (var item in Model)
     {
@@ -27,10 +31,14 @@
             <td>
                 @Html.DisplayFor(modelItem => item.BirimSembol)
             </td>
-            <td>
-                @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.BirimId }, new { @class = "btn btn-primary" }) |
-                @Html.ActionLink("SİL", "Delete", new { id = item.BirimId }, new { @class = "btn btn-danger" })
-            </td>
+            @if (yetkiId == 1 )
+            { 
+                <td>
+                    @Html.ActionLink("GÜNCELLE", "Edit", new { id = item.BirimId }, new { @class = "btn btn-primary" }) |
+                    @Html.ActionLink("SİL", "Delete", new { id = item.BirimId }, new { @class = "btn btn-danger" })
+                </td>
+            }
+                
         </tr>
     }
 
