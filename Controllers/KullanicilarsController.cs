@@ -1,5 +1,6 @@
 ﻿using RestoHub.Models;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace RestoHub.Controllers
         public async Task<ActionResult> Index(bool? aktif)
         {
             if (AltYetkiMi)
-                return RedirectToAction("Profilim"); 
+                return RedirectToAction("Profilim");
 
             var kullanicilar = db.Kullanicilar.AsQueryable();
 
@@ -52,6 +53,11 @@ namespace RestoHub.Controllers
             if (kullanicilar.KullaniciId != AktifKullaniciId)
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
+            // KRİTİK: Profilim sayfasında olmayan ama veritabanında zorunlu olan alanları ModelState'den temizliyoruz.
+            // Bu yapılmazsa ModelState.IsValid hep false döner ve DB'ye asla kaydetmez.
+            var temizlenecekler = new[] { "KullaniciAdi", "YetkiId", "RestoranId", "BaslamaTarihi" };
+            foreach (var key in temizlenecekler) { ModelState.Remove(key); }
+
             if (await db.Kullanicilar.AnyAsync(x =>
                 x.Email == kullanicilar.Email &&
                 x.KullaniciId != kullanicilar.KullaniciId))
@@ -63,16 +69,25 @@ namespace RestoHub.Controllers
                 return View(kullanicilar);
 
             var mevcutKullanici = await db.Kullanicilar.FindAsync(AktifKullaniciId);
-            mevcutKullanici.Ad              = kullanicilar.Ad;
-            mevcutKullanici.Soyad           = kullanicilar.Soyad;
-            mevcutKullanici.Email           = kullanicilar.Email;
-            mevcutKullanici.Telefon         = kullanicilar.Telefon;
-            mevcutKullanici.Sifre           = kullanicilar.Sifre;
-            mevcutKullanici.GuncellemeTarihi = DateTime.Now;
+            if (mevcutKullanici != null)
+            {
+                mevcutKullanici.Ad = kullanicilar.Ad;
+                mevcutKullanici.Soyad = kullanicilar.Soyad;
+                mevcutKullanici.Email = kullanicilar.Email;
+                mevcutKullanici.Telefon = kullanicilar.Telefon;
 
-            await db.SaveChangesAsync();
+                // Şifre boş bırakılmadıysa güncelle
+                if (!string.IsNullOrEmpty(kullanicilar.Sifre))
+                    mevcutKullanici.Sifre = kullanicilar.Sifre;
 
-            TempData["msj"] = "PROFİLİNİZ GÜNCELLENDİ";
+                mevcutKullanici.GuncellemeTarihi = DateTime.Now;
+
+                db.Entry(mevcutKullanici).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+
+                TempData["msj"] = "PROFİLİNİZ BAŞARIYLA GÜNCELLENDİ";
+            }
+
             return RedirectToAction("Profilim");
         }
 
@@ -97,7 +112,6 @@ namespace RestoHub.Controllers
             if (!SuperAdminMi)
             {
                 kullanicilar.RestoranId = AktifRestoranId;
-
                 var izinliYetkiler = IzinliAtanabilirYetkiler(AktifYetkiId);
                 if (!izinliYetkiler.Contains(kullanicilar.YetkiId))
                 {
@@ -119,24 +133,20 @@ namespace RestoHub.Controllers
 
             kullanicilar.Aktif = true;
             kullanicilar.OlusturmaTarihi = DateTime.Now;
-
             db.Kullanicilar.Add(kullanicilar);
             await db.SaveChangesAsync();
 
             TempData["msj"] = "KAYIT BAŞARILI";
             return RedirectToAction("Index");
         }
+
         public async Task<ActionResult> Edit(int? id)
         {
-            if (AltYetkiMi)
-                return RedirectToAction("Profilim");
-
-            if (id == null)
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            if (AltYetkiMi) return RedirectToAction("Profilim");
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
             var kullanicilar = await db.Kullanicilar.FindAsync(id);
-            if (kullanicilar == null)
-                return HttpNotFound();
+            if (kullanicilar == null) return HttpNotFound();
 
             if (!SuperAdminMi && kullanicilar.RestoranId != AktifRestoranId)
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
@@ -151,13 +161,10 @@ namespace RestoHub.Controllers
             [Bind(Include = "KullaniciId,RestoranId,YetkiId,KullaniciAdi,Ad,Soyad,Email,Telefon,Sifre,BaslamaTarihi,Aktif")]
             Kullanicilar kullanicilar)
         {
-            if (AltYetkiMi)
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (AltYetkiMi) return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
-            var mevcutKullanici = await db.Kullanicilar.AsNoTracking()
-                                          .FirstOrDefaultAsync(x => x.KullaniciId == kullanicilar.KullaniciId);
-            if (mevcutKullanici == null)
-                return HttpNotFound();
+            var mevcutKullanici = await db.Kullanicilar.AsNoTracking().FirstOrDefaultAsync(x => x.KullaniciId == kullanicilar.KullaniciId);
+            if (mevcutKullanici == null) return HttpNotFound();
 
             if (!SuperAdminMi && mevcutKullanici.RestoranId != AktifRestoranId)
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
@@ -165,33 +172,20 @@ namespace RestoHub.Controllers
             if (!SuperAdminMi)
             {
                 kullanicilar.RestoranId = AktifRestoranId;
-
-                if (RestoranMudurMu)
-                    kullanicilar.YetkiId = mevcutKullanici.YetkiId; 
-
+                if (RestoranMudurMu) kullanicilar.YetkiId = mevcutKullanici.YetkiId;
                 if (RestoranSahibiMi)
                 {
                     var izinliYetkiler = IzinliAtanabilirYetkiler(AktifYetkiId);
                     if (!izinliYetkiler.Contains(kullanicilar.YetkiId))
-                    {
                         ModelState.AddModelError("YetkiId", "Bu yetkiyi atama izniniz yok.");
-                    }
                 }
             }
 
-            if (await db.Kullanicilar.AnyAsync(x =>
-                x.KullaniciAdi == kullanicilar.KullaniciAdi &&
-                x.KullaniciId != kullanicilar.KullaniciId))
-            {
+            if (await db.Kullanicilar.AnyAsync(x => x.KullaniciAdi == kullanicilar.KullaniciAdi && x.KullaniciId != kullanicilar.KullaniciId))
                 ModelState.AddModelError("KullaniciAdi", "Bu kullanıcı adı başka bir kullanıcıya ait.");
-            }
 
-            if (await db.Kullanicilar.AnyAsync(x =>
-                x.Email == kullanicilar.Email &&
-                x.KullaniciId != kullanicilar.KullaniciId))
-            {
+            if (await db.Kullanicilar.AnyAsync(x => x.Email == kullanicilar.Email && x.KullaniciId != kullanicilar.KullaniciId))
                 ModelState.AddModelError("Email", "Bu email başka bir kullanıcıya ait.");
-            }
 
             if (!ModelState.IsValid)
             {
@@ -209,15 +203,11 @@ namespace RestoHub.Controllers
 
         public async Task<ActionResult> Delete(int? id)
         {
-            if (!SuperAdminMi && !RestoranSahibiMi)
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-
-            if (id == null)
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            if (!SuperAdminMi && !RestoranSahibiMi) return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
 
             var kullanicilar = await db.Kullanicilar.FindAsync(id);
-            if (kullanicilar == null)
-                return HttpNotFound();
+            if (kullanicilar == null) return HttpNotFound();
 
             if (!SuperAdminMi && kullanicilar.RestoranId != AktifRestoranId)
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
@@ -229,23 +219,19 @@ namespace RestoHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
-            if (!SuperAdminMi && !RestoranSahibiMi)
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+            if (!SuperAdminMi && !RestoranSahibiMi) return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
 
             var kullanicilar = await db.Kullanicilar.FindAsync(id);
-            if (kullanicilar == null)
-                return HttpNotFound();
-
-            if (!SuperAdminMi && kullanicilar.RestoranId != AktifRestoranId)
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
-
-            kullanicilar.Aktif = false;
-            kullanicilar.GuncellemeTarihi = DateTime.Now;
-            await db.SaveChangesAsync();
-
-            TempData["msj"] = "KULLANICI PASİF YAPILDI";
+            if (kullanicilar != null && (SuperAdminMi || kullanicilar.RestoranId == AktifRestoranId))
+            {
+                kullanicilar.Aktif = false;
+                kullanicilar.GuncellemeTarihi = DateTime.Now;
+                await db.SaveChangesAsync();
+                TempData["msj"] = "KULLANICI PASİF YAPILDI";
+            }
             return RedirectToAction("Index");
         }
+
         private int[] IzinliAtanabilirYetkiler(int yetkiId)
         {
             switch (yetkiId)
@@ -259,17 +245,12 @@ namespace RestoHub.Controllers
 
         private void DoldurDropDown(Kullanicilar kullanicilar = null)
         {
-            var restoranlar = SuperAdminMi
-                ? db.Restoranlar.ToList()
-                : db.Restoranlar.Where(r => r.RestoranId == AktifRestoranId).ToList();
-
+            var restoranlar = SuperAdminMi ? db.Restoranlar.ToList() : db.Restoranlar.Where(r => r.RestoranId == AktifRestoranId).ToList();
             var izinliYetkiIdler = IzinliAtanabilirYetkiler(AktifYetkiId);
-            var yetkiler = db.Yetkiler
-                             .Where(y => izinliYetkiIdler.Contains(y.YetkiId))
-                             .ToList();
+            var yetkiler = db.Yetkiler.Where(y => izinliYetkiIdler.Contains(y.YetkiId)).ToList();
 
             ViewBag.RestoranId = new SelectList(restoranlar, "RestoranId", "RestoranAdi", kullanicilar?.RestoranId);
-            ViewBag.YetkiId    = new SelectList(yetkiler, "YetkiId", "YetkiAdi", kullanicilar?.YetkiId);
+            ViewBag.YetkiId = new SelectList(yetkiler, "YetkiId", "YetkiAdi", kullanicilar?.YetkiId);
         }
 
         protected override void Dispose(bool disposing)
