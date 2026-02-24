@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic; // List için eklendi
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
@@ -32,11 +33,11 @@ namespace RestoHub.Controllers
             else if (filtre == "teslim")
                 detaylar = detaylar.Where(d => d.SiparisDurumlari.DurumAdi == "Teslim Edildi");
 
-            ViewBag.Filtre         = filtre;
-            ViewBag.BekliyorId     = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 0;
+            ViewBag.Filtre = filtre;
+            ViewBag.BekliyorId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 0;
             ViewBag.HazirlaniyorId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Hazırlanıyor")?.DurumId ?? 0;
-            ViewBag.HazirId        = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Hazır")?.DurumId ?? 0;
-            ViewBag.TeslimId       = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Teslim Edildi")?.DurumId ?? 0;
+            ViewBag.HazirId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Hazır")?.DurumId ?? 0;
+            ViewBag.TeslimId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Teslim Edildi")?.DurumId ?? 0;
 
             var liste = await detaylar
                 .OrderBy(d => d.SiparisId)
@@ -69,7 +70,6 @@ namespace RestoHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(int SiparisId, int UrunId, decimal Miktar, decimal? IndirimTutari, string Notlar)
         {
-            // Tüm değerleri manuel al, ModelState binding sorununu bypass et
             int bekliyorId = db.SiparisDurumlari
                 .Where(d => d.DurumAdi == "Bekliyor")
                 .Select(d => d.DurumId)
@@ -90,16 +90,16 @@ namespace RestoHub.Controllers
 
             var detay = new SiparisDetaylari
             {
-                SiparisId       = SiparisId,
-                UrunId          = UrunId,
-                DurumId         = bekliyorId,
-                Miktar          = Miktar,
-                BirimFiyat      = urun.Fiyat,
-                ToplamFiyat     = toplamFiyat,
-                IndirimTutari   = IndirimTutari,
-                Notlar          = Notlar,
+                SiparisId = SiparisId,
+                UrunId = UrunId,
+                DurumId = bekliyorId,
+                Miktar = Miktar,
+                BirimFiyat = urun.Fiyat,
+                ToplamFiyat = toplamFiyat,
+                IndirimTutari = IndirimTutari,
+                Notlar = Notlar,
                 OlusturmaTarihi = DateTime.Now,
-                HazirlayanId    = AktifKullaniciId
+                HazirlayanId = AktifKullaniciId
             };
 
             db.SiparisDetaylari.Add(detay);
@@ -127,6 +127,10 @@ namespace RestoHub.Controllers
 
             detay.DurumId = yeniDurumId;
             await db.SaveChangesAsync();
+
+            // --- KRİTİK SENKRONİZASYON ---
+            await AnaSiparisDurumGuncelle(detay.SiparisId);
+
             TempData["msj"] = "DURUM GÜNCELLENDİ";
             return RedirectToAction("Index", new { filtre });
         }
@@ -151,8 +155,34 @@ namespace RestoHub.Controllers
                 d.DurumId = yeniDurumId;
 
             await db.SaveChangesAsync();
+
+            // --- KRİTİK SENKRONİZASYON ---
+            await AnaSiparisDurumGuncelle(siparisId);
+
             TempData["msj"] = "SİPARİŞ DURUMU GÜNCELLENDİ";
             return RedirectToAction("Index", new { filtre });
+        }
+
+        // YARDIMCI METOD: Ürünler teslim edilince ana siparişi de bitirir
+        private async Task AnaSiparisDurumGuncelle(int siparisId)
+        {
+            var teslimEdildiId = db.SiparisDurumlari.FirstOrDefault(d => d.DurumAdi == "Teslim Edildi")?.DurumId ?? 4;
+
+            // Siparişe ait hala "Teslim Edildi" OLMAYAN ürün var mı?
+            bool baskaUrunVarMi = await db.SiparisDetaylari
+                .AnyAsync(d => d.SiparisId == siparisId && d.DurumId != teslimEdildiId);
+
+            // Eğer tüm ürünler teslim edildiyse
+            if (!baskaUrunVarMi)
+            {
+                var anaSiparis = await db.Siparisler.FindAsync(siparisId);
+                if (anaSiparis != null)
+                {
+                    anaSiparis.DurumId = teslimEdildiId; // Ana siparişi de Teslim Edildi yap
+                    db.Entry(anaSiparis).State = EntityState.Modified;
+                    await db.SaveChangesAsync();
+                }
+            }
         }
 
         // POST: Detay sil
@@ -184,7 +214,7 @@ namespace RestoHub.Controllers
                 .Where(d => d.SiparisId == siparisId)
                 .ToList();
 
-            siparis.AraToplam   = detaylar.Sum(d => d.ToplamFiyat);
+            siparis.AraToplam = detaylar.Sum(d => d.ToplamFiyat);
             siparis.ToplamTutar = siparis.AraToplam
                                   - (siparis.IndirimTutari ?? 0)
                                   + (siparis.KDVTutari ?? 0);
@@ -206,8 +236,8 @@ namespace RestoHub.Controllers
 
             var urunler = urunSorgu.OrderBy(u => u.UrunAdi).ToList();
 
-            ViewBag.UrunId     = new SelectList(urunler, "UrunId", "UrunAdi", detay?.UrunId);
-            ViewBag.SiparisId  = siparisId ?? 0;
+            ViewBag.UrunId = new SelectList(urunler, "UrunId", "UrunAdi", detay?.UrunId);
+            ViewBag.SiparisId = siparisId ?? 0;
             ViewBag.BekliyorId = db.SiparisDurumlari
                 .FirstOrDefault(d => d.DurumAdi == "Bekliyor")?.DurumId ?? 1;
 

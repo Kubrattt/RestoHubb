@@ -84,6 +84,7 @@ namespace RestoHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> OdemeYap(int siparisId, string odemeYontemi, string odenenTutarStr)
         {
+            // 1. Yetki Kontrolü
             int[] yetkililer = { 1, 2, 3, 6 };
             if (!yetkililer.Contains(AktifYetkiId))
             {
@@ -91,22 +92,39 @@ namespace RestoHub.Controllers
                 return RedirectToAction("MasaDetay", new { id = db.Siparisler.Find(siparisId)?.MasaId });
             }
 
+            // 2. Format Bağımsız Sayı Dönüştürme (KRİTİK NOKTA)
             decimal odenenTutar = 0;
-            if (string.IsNullOrEmpty(odenenTutarStr) || !decimal.TryParse(odenenTutarStr.Replace(".", ","), out odenenTutar))
+            if (!string.IsNullOrEmpty(odenenTutarStr))
             {
-                TempData["hata"] = "Lütfen geçerli bir ödeme tutarı giriniz.";
+                try
+                {
+                    // Virgülü noktaya çevirip, binlik ayracı olan noktaları temizliyoruz
+                    string temizTutar = odenenTutarStr.Replace(".", "").Replace(",", ".");
+                    odenenTutar = decimal.Parse(temizTutar, System.Globalization.CultureInfo.InvariantCulture);
+                }
+                catch
+                {
+                    TempData["hata"] = "Lütfen geçerli bir ödeme tutarı giriniz. (Örn: 1000,50)";
+                    return RedirectToAction("MasaDetay", new { id = db.Siparisler.Find(siparisId)?.MasaId });
+                }
+            }
+            else
+            {
+                TempData["hata"] = "Ödeme tutarı boş olamaz.";
                 return RedirectToAction("MasaDetay", new { id = db.Siparisler.Find(siparisId)?.MasaId });
             }
 
-            var siparis = await db.Siparisler.Include(s => s.Masalar).Include(s => s.SiparisDetaylari).FirstOrDefaultAsync(s => s.SiparisId == siparisId);
+            var siparis = await db.Siparisler.Include(s => s.Masalar).FirstOrDefaultAsync(s => s.SiparisId == siparisId);
             if (siparis == null) return HttpNotFound();
 
+            // 3. Masayı Boşalt
             if (siparis.Masalar != null)
             {
                 siparis.Masalar.Dolu = false;
                 db.Entry(siparis.Masalar).State = EntityState.Modified;
             }
 
+            // 4. Siparişi Kapat
             siparis.OdemeDurumu = "Ödendi";
             siparis.OdemeYontemi = odemeYontemi;
             siparis.ToplamTutar = odenenTutar;
@@ -114,8 +132,6 @@ namespace RestoHub.Controllers
 
             await db.SaveChangesAsync();
             TempData["msj"] = "Tahsilat alındı, masa boşaltıldı.";
-
-            // DÜZELTME: Seni Index'e değil DurumGuncelle'ye atıyoruz ki Model hatası vermesin.
             return RedirectToAction("DurumGuncelle", new { filtre = "aktifBos" });
         }
 

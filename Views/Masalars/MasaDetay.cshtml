@@ -131,11 +131,11 @@
                                 <div class="mb-4">
                                     <label class="form-label small fw-bold">ÖDENECEK TUTAR</label>
                                     <div class="input-group">
+                                        @* type="text" yaptık ve ismini odenenTutarStr olarak kesinleştirdik *@
                                         <input type="text" name="odenenTutarStr" class="form-control fw-bold fs-5 text-center text-danger"
-                                               value="@((Model.SiparisDetaylari != null ? Model.SiparisDetaylari.Sum(x => x.ToplamFiyat) : 0).ToString("N2"))" required />
+                                               value="@Model.SiparisDetaylari.Sum(x => x.ToplamFiyat).ToString("N2")" required />
                                         <span class="input-group-text bg-light fw-bold">₺</span>
                                     </div>
-                                    <small class="text-muted mt-1 d-block text-center">Tutar üzerinde değişiklik yapabilirsiniz.</small>
                                 </div>
 
                                 <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm py-3" onclick="return confirm('Tahsilatı onaylıyor musunuz? Bu işlemden sonra masa boşaltılacaktır.')">
